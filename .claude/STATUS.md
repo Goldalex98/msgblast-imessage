@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-07 22:25 ET
+**Updated:** 2026-11-07 22:40 ET
 **At:** The test probes and the fork app builder are merged; they pass on the Linux box but haven't run on the Mac.
 **Next:** On the MacBook with you: clone, build the fork app, then run the probes and the few test sends.
 **Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 merged to `main` (PRs #2, #3); Tasks 8–11 need the MacBook.
@@ -17,7 +17,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
-- Fork CI (`fork-ci.yml`) being added on `ci/fork-ci`: Linux gate + native core tests on GitHub's `xcode-27` runner. Nothing else runs: no app build, no uplink, no HomeChat routes.
+- Fork CI (`fork-ci.yml`, PR #4): runs on PRs and pushes to `main`. Nothing else runs: no app build, no uplink, no HomeChat routes.
 
 ## QUEUED
 - MacBook, Tasks 8–11: clone the fork, check macOS, Xcode 27 and Apple silicon, then make the self-signed signing certificate. Alex then runs the probes and the real sends (only with his yes), and Claude reads only the counts-only reports.
@@ -40,6 +40,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 ## EVIDENCE
 - Linux gate at setup (2026-11-07, Python 3.12.3): 121 script tests, OK, 2 skipped (one needs `installer-requirements.txt`, one needs macOS clang/lipo).
 - Linux gate after the review fixes (2026-11-07 22:10 ET): 174 tests, OK, 2 skipped. Fixture-only: no probe has touched a real `chat.db`, Messages, HomeChat or `codesign`.
+- First fork CI run (2026-11-08 03:17–03:37 UTC, run 42442049686, PR #4 head `24aa5f7`): linux pass (Python tests OK, 2 skipped); native pass on GitHub `xcode-27`, Xcode 27.0 (27A266a): Python tests OK (1 skipped), native core tests 872 executed, 1 skipped, 0 failures, TEST SUCCEEDED. Upstream's six workflows stayed off. This is GitHub's VM, not the MacBook: TCC, signing and the real app are still unproven.
 - Agent live proof (headless `claude -p`, 2026-11-07): `quality-gate` on Haiku 5.5 ran the Linux gate (pass, 2 turns); `send-safety-reviewer` on Sonnet 5.5 reviewed the setup files (pass, no findings, 5 turns). 0 permission denials each. The first runs ignored the project allow rules (folder untrusted); after Alex set the trust flag, `quality-gate` re-ran with no trust warning and 0 denials, so the Linux allow rule matches. The Mac allow rule is unproven until it runs there.
 - Not proven yet: anything on the Mac (Xcode 27, native tests, signing), msgblast on current macOS, `attributedBody`-only bodies, group read and send, whether a send raises Messages, iPhone-to-Mac sync delay, permission grants across rebuilds, the Mac reaching HomeChat through Cloudflare, the Sparkle and telemetry blanks at runtime.
 
