@@ -68,7 +68,7 @@ struct msgblastApp: App {
             }
         }
         Settings {
-            if let model { AppSettingsView(model: model, updater: updater, shortcut: startup.shortcut) }
+            if let model { AppSettingsView(model: model, updater: updater, shortcut: startup.shortcut, companion: startup.companion) }
             else { InstallationView() }
         }
         MenuBarExtra {
@@ -181,6 +181,7 @@ private final class AppStartup: ObservableObject {
     let needsInstallation: Bool
     let model: AppModel?
     let shortcut = NewBlastShortcut()
+    let companion: CompanionController?  // fork: iMessage companion
     private var observation: AnyCancellable?
 
     init() {
@@ -196,6 +197,14 @@ private final class AppStartup: ObservableObject {
             homeURL: FileManager.default.homeDirectoryForCurrentUser, development: development)
         model = needsInstallation ? nil : AppModel()
         if let model { model.coordinator = WindowCoordinator(model: model) }
+        // fork: iMessage companion. Does nothing until an uplink address and token are saved.
+        companion = model.flatMap { model in
+            model.demo ? nil : CompanionController(supportFolder: SupportDirectory.folderName(
+                demo: false, override: Bundle.main.object(forInfoDictionaryKey: "msgblastSupportDirectory") as? String,
+                webPreview: Bundle.main.object(forInfoDictionaryKey: "msgblastLiveWebPreview") as? Bool == true,
+                bundleIdentifier: Bundle.main.bundleIdentifier))
+        }
+        companion?.start()
         // Keep comparison menus in sync without constructing the model for an
         // uninstalled copy (its initializer starts Messages history polling).
         observation = model?.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }
