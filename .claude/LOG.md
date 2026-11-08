@@ -73,3 +73,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 ## 2026-11-08 14:05 ET: send probe's frontmost check fixed for macOS 27
 - c2 reported `frontmost_before/after = unknown`. macOS 27's `lsappinfo info -only name` prints `"Name" ASN:...` instead of `"LSDisplayName"="Name"`, and can quote the bundle ID on a later line, so the old pattern found nothing (or would have matched the bundle ID). The probe now reads the leading quoted name first and falls back to the old form. Test-first; Python gate 175 OK, 1 skipped.
 - c2's own focus reading is lost; spike (d) uses c1 and c3, plus Alex's eyes on c2. The send path and its checks are unchanged.
+
+## 2026-11-08 14:10 ET: spikes (c) and (d), Task 10 done
+- Alex typed his yes in chat and ran each send himself in Terminal.app; Claude never sent. Recipients were his own choice of real contacts (a 1:1 and a two-person group); their names and numbers are only in the git-ignored local config, never in the repo.
+- Two runs stopped at the `SEND` prompt before c1 (not typed exactly); the counter proved nothing was submitted, so retrying was safe.
+- c2 ran before the frontmost fix, so its focus reading is lost; the verdict rests on c1, c3 and c4. c3 is the strongest case: Messages wasn't running, the send launched it, and Terminal stayed in front.
+- 3 of the 6 phase 0 sends are used; the rest stay unused unless a later spike needs them.
