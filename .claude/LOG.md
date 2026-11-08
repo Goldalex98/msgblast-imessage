@@ -79,3 +79,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Two runs stopped at the `SEND` prompt before c1 (not typed exactly); the counter proved nothing was submitted, so retrying was safe.
 - c2 ran before the frontmost fix, so its focus reading is lost; the verdict rests on c1, c3 and c4. c3 is the strongest case: Messages wasn't running, the send launched it, and Terminal stayed in front.
 - 3 of the 6 phase 0 sends are used; the rest stay unused unless a later spike needs them.
+
+## 2026-11-08 17:40 ET: phase 1 Mac plan drafted
+- `docs/superpowers/plans/2026-11-08-phase1-mac-read-and-uplink.md`, 10 tasks: contract, models, decoder, reader, scrubber, config/token/client, service, Contacts names, status section, acceptance runbook. No sending.
+- `NSUnarchiver` raises Objective-C exceptions on corrupt input and the project has no Objective-C to catch them, so a structural pre-check (the spike's scanner rules) gates every call. The residual risk is a structurally valid but internally corrupt blob.
+- Contract deviations from the spec's sketch: attachments are a count, not names; verification-code and short-code messages go up as `kind: skipped` with no text, so codes never leave the Mac.
+- HomeChat's half starts in `homechat-bot` (4b is live, pre-approved 2026-11-07) against the contract, under that repo's rules.
