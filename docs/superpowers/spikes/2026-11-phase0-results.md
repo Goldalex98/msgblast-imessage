@@ -8,6 +8,8 @@ Percentages and verdicts only (plan rule: no absolute message counts). Every run
 | (b) | Can group threads be read with a sender for every inbound message? | 100% of inbound group messages resolve to a sender handle; 0% style/participant mismatches; 11% of active groups have a display name; 1.2% of group messages carry a reply link. | Pass for reading |
 | (f awake) | iPhone-to-Mac sync delay while the Mac is awake | All sends seen within one 2 s poll: median 0.6 s, max 1.6 s, all iMessage, no sleeps. | Pass: sync isn't the bottleneck |
 | (g) | Do Full Disk Access and Automation survive a rebuild from a new commit? | Two builds from different commits, both signed with the self-signed local certificate: same designated requirement (bundle ID plus certificate, no code hash), new code hash, and both grants still shown by the app after reinstalling over the old copy. | Pass: signing method settled |
+| (c) | Can the identity-checked AppleScript path send to an existing 1:1 and group thread exactly once, and refuse a changed member set? | 1:1 and group (Messages running and not running): sent, each found exactly once in `chat.db` within 0.5–2.6 s. Tampered member list: refused before submitting (9004), nothing sent. | Pass: group sends go (spec §10.8) |
+| (d) | Does a send pull Messages to the front? | Terminal stayed frontmost before and after every send it measured (1:1, and group with Messages quit). With Messages quit, the send launched it in the background and took 2.3 s instead of 0.2 s. | Pass: no focus steal |
 
 ## (a) Bodies stored only in `attributedBody` (2026-11-08)
 
@@ -40,6 +42,18 @@ Percentages and verdicts only (plan rule: no absolute message counts). Every run
 - One-time setup per Mac: `codesign` must be allowed to use the certificate's key. From a process with no window (Claude's shell) a new key fails with `errSecInternalComponent`; one build from Terminal.app with Always Allow fixes it for later builds.
 - The first pair was redone as build 2 → build 3 because build 1's record wasn't saved.
 
+## (c) and (d) Real sends and focus (2026-11-08)
+
+- Run by Alex in Terminal.app after his typed yes, to a 1:1 test chat and a group with two other people; every send needed `SEND` typed at the prompt. 3 real sends of the 6 allowed; the tampered run was refused, so its slot was released.
+- c1, 1:1, Messages open: `sent`, `anchor_rows=1`, found in 0.6 s.
+- c2, group, Messages open: `sent`, `anchor_rows=1`, found in 0.5 s; arrival confirmed by Alex. Its focus readings were lost to a probe bug (below).
+- c3, group, Messages quit: `sent`, `anchor_rows=1`, found in 2.6 s; Messages was launched by the send and stayed in the background.
+- c4, group with one expected member swapped for a fake address: `not_sent`, code 9004 (member check), before any submission.
+- **(d) verdict:** Terminal stayed frontmost on c1, c3 and c4, so a send doesn't raise Messages, even when it has to launch it. Phase 1's send executor can run from the background app.
+- **Group sends:** go. The identity, service, member-count and member checks all ran on a real group and refused a changed member set.
+- Probe fix found here: macOS 27's `lsappinfo` output broke the frontmost check (all `unknown` on c2); fixed test-first before c1 and c3.
+- Not proven: confirmation from every recipient that c1 and c3 arrived exactly once (`anchor_rows` shows one local copy, not delivery); SMS sends; sends from the fork app itself rather than `osascript` in Terminal.
+
 ## Still to run
 
-- (c)/(d) sends and focus (Task 10, only with Alex's typed yes), (e) reach and (f) asleep (Task 11).
+- (e) reach and (f) asleep (Task 11).
