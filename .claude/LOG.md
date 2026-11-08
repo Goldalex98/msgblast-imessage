@@ -22,3 +22,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Alex approved `docs/superpowers/plans/2026-11-07-phase0-spikes.md`. It runs inline (his standing rule: inline unless he picks subagent-driven).
 - Why probes in Python, not Swift: they run in the existing Linux gate against synthetic databases, and they can be read before they ever touch the real `chat.db`. Phase 1 ports the decoder to Swift.
 - Why reuse upstream's preview builder for the fork app: it already isolates the bundle ID, the support folder and Sparkle, so no upstream file needs editing. The fork variant uses the blue icon because the builder expects blue-green only for its own `development` variant.
+
+## 2026-11-07 22:10 ET: phase 0 probes built and reviewed
+- Tasks 1–7 ran inline on `spikes/phase0`, each test-first. A fresh Opus code review and `send-safety-reviewer` found no Critical issues.
+- Fixed before any Mac run: undecodable text in `chat.db` could have put message text or a group name into an error message; a real send could go uncounted if interrupted during `osascript`, or unreported if the 30 s anchor watch failed; an ambiguous send didn't stop a rerun (now a `.local/spikes/send-blocked` marker that only Alex deletes, after checking with the test contacts).
+- Kept on purpose: `--tamper` stays a real send attempt, because Task 10 tests that the real send path refuses a changed member set. The 6-send cap counts real sends only; preflights carry no send command.
+- Deferred minors: no lock on the send counter (don't run two probes at once); `sync_watch` writes nothing if stopped with Ctrl-C (let it run to `--minutes`); the fork build's temp copy briefly includes `.local/`; a failed re-sign leaves the ad-hoc app in `build/fork-app`; `find_anchor` matches the plain `text` column only, so `anchor_rows 0` means "check by hand", not "not delivered".

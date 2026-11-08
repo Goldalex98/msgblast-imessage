@@ -1,16 +1,16 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-07 21:50 ET
-**At:** Alex approved the phase 0 test plan; building the test probes now. No app code yet.
-**Next:** Build the test probes on the Linux box, then run them on the MacBook.
-**Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 running inline on `spikes/phase0`.
+**Updated:** 2026-11-07 22:10 ET
+**At:** The seven test probes and the fork app builder are written and pass their tests on the Linux box.
+**Next:** Your yes to merge the plan PR and the probes PR; then the probes run on the MacBook with you.
+**Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 done and reviewed on `spikes/phase0`; PR open, awaiting merge yes.
 **Milestones:** Setup ✓ · Spikes (now) · Read and flag · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
 
 _The instrument panel: rewrite it in place, only ever describing now, on every state change. Why things are the way they are goes in [LOG.md](LOG.md) (append only). Format and rules: the user-level `flight-deck` skill. This repo is public: no names, numbers, hosts or tokens here._
 
 ## PLAN
-- 0 Spikes — answer the seven unknowns on the MacBook (design §7) — now (plan approved, probes being built)
+- 0 Spikes — answer the seven unknowns on the MacBook (design §7) — now (probes built, Mac runs next)
 - 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — next
 - 2 Calendar — free or clash for texted dates, add on yes — next
 - 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — next
@@ -20,7 +20,6 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - Nothing runs yet: no app build, no uplink, no HomeChat routes.
 
 ## QUEUED
-- Phase 0 plan `docs/superpowers/plans/2026-11-07-phase0-spikes.md`, Tasks 1–7 (probes, tests and the fork app build) on the Linux box, inline, branch `spikes/phase0`.
 - MacBook, Tasks 8–11: clone the fork, check macOS, Xcode 27 and Apple silicon, then make the self-signed signing certificate. Alex then runs the probes and the real sends (only with his yes), and Claude reads only the counts-only reports.
 - HomeChat's half is built in `homechat-bot`, not here. Spike (e)'s full test needs a probe route there.
 
@@ -32,13 +31,15 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 
 ## AWAITING Alex
 - His re-review of the design.
-- A merge yes for the plan PR.
+- A merge yes for the plan PR (#2), then for the probes PR (`spikes/phase0`, includes the plan commit).
 
 ## DONE
+- 2026-11-07: phase 0 Tasks 1–7 on `spikes/phase0` (`ee7c52b..` 8 commits, incl. one final-review fix pass): probe library and synthetic fixture, spikes (a), (b), (c)/(d), (e), (f), (g), and `companion/build_fork_app.py`. Final review: 0 Critical; 4 Important fixed with tests; 5 minors deferred (LOG 22:10).
 - 2026-11-07: forked upstream at `8fd9191` (public, `main` only, Actions disabled); added CLAUDE.md, `.claude/` (settings, agents, STATUS, LOG), FORK.md, `.gitignore` entries and the approved design.
 
 ## EVIDENCE
 - Linux gate at setup (2026-11-07, Python 3.12.3): 121 script tests, OK, 2 skipped (one needs `installer-requirements.txt`, one needs macOS clang/lipo).
+- Linux gate after the review fixes (2026-11-07 22:10 ET): 174 tests, OK, 2 skipped. Fixture-only: no probe has touched a real `chat.db`, Messages, HomeChat or `codesign`.
 - Agent live proof (headless `claude -p`, 2026-11-07): `quality-gate` on Haiku 5.5 ran the Linux gate (pass, 2 turns); `send-safety-reviewer` on Sonnet 5.5 reviewed the setup files (pass, no findings, 5 turns). 0 permission denials each. The first runs ignored the project allow rules (folder untrusted); after Alex set the trust flag, `quality-gate` re-ran with no trust warning and 0 denials, so the Linux allow rule matches. The Mac allow rule is unproven until it runs there.
 - Not proven yet: anything on the Mac (Xcode 27, native tests, signing), msgblast on current macOS, `attributedBody`-only bodies, group read and send, whether a send raises Messages, iPhone-to-Mac sync delay, permission grants across rebuilds, the Mac reaching HomeChat through Cloudflare, the Sparkle and telemetry blanks at runtime.
 
