@@ -1,16 +1,16 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-07 21:30 ET
-**At:** The fork is set up with its rules, agents and the approved design. No app code yet.
-**Next:** Write the build plan, then run the phase 0 tests on the MacBook.
-**Phase:** Setup done on the Linux box; the build plan is next, with the phase 0 spikes first.
+**Updated:** 2026-11-07 21:50 ET
+**At:** Alex approved the phase 0 test plan; building the test probes now. No app code yet.
+**Next:** Build the test probes on the Linux box, then run them on the MacBook.
+**Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 running inline on `spikes/phase0`.
 **Milestones:** Setup ✓ · Spikes (now) · Read and flag · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
 
 _The instrument panel: rewrite it in place, only ever describing now, on every state change. Why things are the way they are goes in [LOG.md](LOG.md) (append only). Format and rules: the user-level `flight-deck` skill. This repo is public: no names, numbers, hosts or tokens here._
 
 ## PLAN
-- 0 Spikes — answer the seven unknowns on the MacBook (design §7) — now (build plan next)
+- 0 Spikes — answer the seven unknowns on the MacBook (design §7) — now (plan approved, probes being built)
 - 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — next
 - 2 Calendar — free or clash for texted dates, add on yes — next
 - 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — next
@@ -20,9 +20,9 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - Nothing runs yet: no app build, no uplink, no HomeChat routes.
 
 ## QUEUED
-- Build plan with `superpowers:writing-plans` from the design, phase 0 spikes (a)–(g) first. Alex re-reviews the design meanwhile.
-- MacBook: clone the fork, check macOS and Xcode 27, make the self-signed Keychain code-signing certificate, run the spikes.
-- HomeChat's half waits until HomeChat's phase 4b is live; it is built in `homechat-bot`, not here.
+- Phase 0 plan `docs/superpowers/plans/2026-11-07-phase0-spikes.md`, Tasks 1–7 (probes, tests and the fork app build) on the Linux box, inline, branch `spikes/phase0`.
+- MacBook, Tasks 8–11: clone the fork, check macOS, Xcode 27 and Apple silicon, then make the self-signed signing certificate. Alex then runs the probes and the real sends (only with his yes), and Claude reads only the counts-only reports.
+- HomeChat's half is built in `homechat-bot`, not here. Spike (e)'s full test needs a probe route there.
 
 ## BLOCKED
 - None.
@@ -31,7 +31,8 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
 
 ## AWAITING Alex
-- His re-review of the design while the build plan is written.
+- His re-review of the design.
+- A merge yes for the plan PR.
 
 ## DONE
 - 2026-11-07: forked upstream at `8fd9191` (public, `main` only, Actions disabled); added CLAUDE.md, `.claude/` (settings, agents, STATUS, LOG), FORK.md, `.gitignore` entries and the approved design.
