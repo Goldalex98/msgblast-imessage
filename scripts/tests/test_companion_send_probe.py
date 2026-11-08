@@ -97,6 +97,19 @@ class ScriptTests(unittest.TestCase):
         self.assertTrue(send_probe.messages_running(runner("4242\n")))
         self.assertFalse(send_probe.messages_running(runner("", 1)))
 
+    def test_frontmost_macos27_format(self):
+        # macOS 27's lsappinfo prints the name first and a quoted bundle ID on a later line.
+        def runner(output):
+            return lambda args, stdin=None, timeout=10.0: (0, output, False)
+        def front(name, bundle):
+            return (f'"{name}" ASN:0x0-0x207207: (in front) \n    bundleID="{bundle}" \n'
+                    '    bundle path=[ NULL ] \n')
+        self.assertEqual(send_probe.frontmost(runner(front("Terminal", "com.apple.Terminal"))), "terminal")
+        self.assertEqual(send_probe.frontmost(runner(front("Messages", "com.apple.MobileSMS"))), "messages")
+        self.assertEqual(send_probe.frontmost(runner(front("Claude", "com.example.other"))), "other")
+        self.assertEqual(send_probe.frontmost(runner('"Terminal" ASN:0x0-0x1: \n    bundleID=[ NULL ] \n')),
+                         "terminal")
+
 
 class ProbeTests(unittest.TestCase):
     def setUp(self):
