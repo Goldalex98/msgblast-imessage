@@ -1,9 +1,9 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-07 22:10 ET
-**At:** The seven test probes and the fork app builder are written and pass their tests on the Linux box.
-**Next:** Your yes to merge the plan PR and the probes PR; then the probes run on the MacBook with you.
-**Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 done and reviewed on `spikes/phase0`; PR open, awaiting merge yes.
+**Updated:** 2026-11-07 22:15 ET
+**At:** The test probes and the fork app builder are merged; they pass on the Linux box but haven't run on the Mac.
+**Next:** On the MacBook with you: clone, build the fork app, then run the probes and the few test sends.
+**Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 merged to `main` (PRs #2, #3); Tasks 8–11 need the MacBook.
 **Milestones:** Setup ✓ · Spikes (now) · Read and flag · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
 
@@ -31,7 +31,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 
 ## AWAITING Alex
 - His re-review of the design.
-- A merge yes for the plan PR (#2), then for the probes PR (`spikes/phase0`, includes the plan commit).
+- A MacBook session for Tasks 8–11, and a yes typed in chat before Task 10's real sends.
 
 ## DONE
 - 2026-11-07: phase 0 Tasks 1–7 on `spikes/phase0` (`ee7c52b..` 8 commits, incl. one final-review fix pass): probe library and synthetic fixture, spikes (a), (b), (c)/(d), (e), (f), (g), and `companion/build_fork_app.py`. Final review: 0 Critical; 4 Important fixed with tests; 5 minors deferred (LOG 22:10).
