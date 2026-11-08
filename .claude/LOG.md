@@ -55,3 +55,6 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 ## 2026-11-08 11:05 ET: spike (f awake) and Task 8 done
 - 8 events rather than the 3 test texts: `sync_watch` counts every `is_from_me` row, tapbacks included, from any device. That's a bigger sample, not an error. All delays fell inside the 2 s poll, so awake sync is faster than the probe can resolve.
 - Plan box ticks for Task 8 are left as they are; STATUS and the results doc are the record.
+
+## 2026-11-08 11:20 ET: standing merge approval
+- Alex changed the rule: Claude merges fork PRs itself once their fork CI run is green, instead of asking per PR. It matches his rule for his other repos. Unchanged: nothing goes upstream without his yes, real sends still need their own typed yes, and `homechat-bot` follows its own rules.

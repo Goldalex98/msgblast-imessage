@@ -2,7 +2,7 @@
 
 **Updated:** 2026-11-08 11:05 ET
 **At:** Task 8 done on the MacBook: spikes (a), (b) and (f awake) ran and their verdicts are in `docs/superpowers/spikes/2026-11-phase0-results.md`; decoder decision NSUnarchiver.
-**Next:** PR Task 8's records (branch `spikes/mac-task8`), then Task 9: permission grants across rebuilds.
+**Next:** merge PR #5 (Task 8 records) when fork CI is green, then Task 9: permission grants across rebuilds.
 **Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 merged to `main` (PRs #2, #3); Task 8 done on the MacBook (not yet merged); Tasks 9–11 next.
 **Milestones:** Setup ✓ · Spikes (now) · Read and flag · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
@@ -30,7 +30,6 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
 
 ## AWAITING Alex
-- A yes to commit, push and PR `spikes/mac-task8` (STATUS, LOG, results doc), and a yes to merge it.
 - His re-review of the design.
 - A MacBook session for Tasks 8–11, and a yes typed in chat before Task 10's real sends.
 
@@ -50,7 +49,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - Not proven yet: signing and the fork app on the Mac, msgblast on current macOS, the Swift `NSUnarchiver` decoder, group send, whether a send raises Messages, iPhone-to-Mac sync delay while asleep, permission grants across rebuilds, the Mac reaching HomeChat through Cloudflare, the Sparkle and telemetry blanks at runtime.
 
 ## STANDING RULES
-- `CLAUDE.md` holds them: never write the Messages database; no send without Alex's exact-text approval; uncertain sends never retried; no personal data in this public repo; nothing aimed at upstream without Alex's yes.
+- `CLAUDE.md` holds them (fork PRs merge on green CI without asking, since 2026-11-08): never write the Messages database; no send without Alex's exact-text approval; uncertain sends never retried; no personal data in this public repo; nothing aimed at upstream without Alex's yes.
 
 ## WHERE THINGS ARE
 - Design: `docs/superpowers/specs/2026-11-07-imessage-companion-design.md`. Build plan (when written): `docs/superpowers/plans/`.
