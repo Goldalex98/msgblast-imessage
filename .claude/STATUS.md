@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-07 21:25 ET
+**Updated:** 2026-11-07 21:30 ET
 **At:** The fork is set up with its rules, agents and the approved design. No app code yet.
 **Next:** Write the build plan, then run the phase 0 tests on the MacBook.
 **Phase:** Setup done on the Linux box; the build plan is next, with the phase 0 spikes first.
@@ -25,7 +25,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - HomeChat's half waits until HomeChat's phase 4b is live; it is built in `homechat-bot`, not here.
 
 ## BLOCKED
-- Project allow rules don't load on the Linux box yet: the CLI reports this folder as untrusted (its own `hasTrustDialogAccepted` is false, even though a parent folder is trusted, so no prompt appears). Gate commands still run through auto mode. Unblocked when Alex sets the flag; then re-run `quality-gate` and check the warning is gone.
+- None.
 
 ## HELD
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
@@ -38,7 +38,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 
 ## EVIDENCE
 - Linux gate at setup (2026-11-07, Python 3.12.3): 121 script tests, OK, 2 skipped (one needs `installer-requirements.txt`, one needs macOS clang/lipo).
-- Agent live proof (headless `claude -p`, 2026-11-07): `quality-gate` on Haiku 5.5 ran the Linux gate (pass, 2 turns); `send-safety-reviewer` on Sonnet 5.5 reviewed the setup files (pass, no findings, 5 turns). 0 permission denials each, but the project allow rules were ignored (folder untrusted), so their exact-match is unproven.
+- Agent live proof (headless `claude -p`, 2026-11-07): `quality-gate` on Haiku 5.5 ran the Linux gate (pass, 2 turns); `send-safety-reviewer` on Sonnet 5.5 reviewed the setup files (pass, no findings, 5 turns). 0 permission denials each. The first runs ignored the project allow rules (folder untrusted); after Alex set the trust flag, `quality-gate` re-ran with no trust warning and 0 denials, so the Linux allow rule matches. The Mac allow rule is unproven until it runs there.
 - Not proven yet: anything on the Mac (Xcode 27, native tests, signing), msgblast on current macOS, `attributedBody`-only bodies, group read and send, whether a send raises Messages, iPhone-to-Mac sync delay, permission grants across rebuilds, the Mac reaching HomeChat through Cloudflare, the Sparkle and telemetry blanks at runtime.
 
 ## STANDING RULES

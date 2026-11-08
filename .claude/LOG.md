@@ -13,3 +13,7 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - **Agents:** `quality-gate` (Haiku, high) and `send-safety-reviewer` (Sonnet, medium). No ops inspector (nothing runs yet) and no Opus reviewer (no money or deletion here).
 - **The design** was copied unchanged from HomeChat's research notes, where Alex approved it at 13:00 ET. A scan found no hostnames, IP addresses, phone numbers, emails or tokens. The background evaluation stays in `homechat-bot`.
 - **Clone detail:** the Remember plugin had already written `.remember/` into the empty folder, which blocks `git clone <url> .`. It was moved aside for the one clone command and moved back; it is git-ignored.
+
+## 2026-11-07 21:30 ET: commit identity and folder trust
+- **Commit email:** this repo's commits use the GitHub noreply address (local `git config user.email` in this clone only), because a public repo would otherwise publish the personal address in its history. The setup commit was rewritten before its first push, so no commit with the personal address was ever pushed. Set the same local email in the MacBook clone.
+- **Folder trust:** the first headless agent runs warned that the project allow rules were ignored. The parent folder is trusted, so no trust prompt appears, but the CLI checks this folder's own flag, which was false. Alex set it; the re-run showed no warning. Lesson: read `claude -p` stderr in live proofs, because 0 denials alone can mean auto mode allowed the command.
