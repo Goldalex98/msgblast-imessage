@@ -12,6 +12,10 @@ fork-only features here, not upstream.
 - **Since 2026-11-07:** Claude Code project files (`CLAUDE.md`, `.claude/`), the design of an
   iMessage companion (`docs/superpowers/specs/`), this file, and extra `.gitignore` entries.
   No app code has changed yet.
+- **Since 2026-11-07:** `companion/` holds fork-only tools: `build_fork_app.py` builds
+  "msgblast iMessage.app" (its own bundle ID and support folder, updates and telemetry off) by
+  reusing upstream's preview builder unchanged, and `companion/spikes/` holds the phase 0 probes,
+  which print counts only. Their tests are `scripts/tests/test_companion_*.py`.
 - **Planned** (see the design): an iMessage companion that reads Messages threads read-only,
   flags messages waiting on a reply, sends them to the owner's own home server, and sends a reply
   only after the owner approves its exact text. Builds of this fork will use their own bundle ID,
