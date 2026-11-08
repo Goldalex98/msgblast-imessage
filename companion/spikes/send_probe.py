@@ -110,7 +110,8 @@ def parse_outcome(returncode: int, stdout: str, timed_out: bool) -> Tuple[str, O
 
 def frontmost(runner: Runner) -> str:
     code, out, timed_out = runner(["/bin/sh", "-c", 'lsappinfo info -only name "$(lsappinfo front)"'], timeout=5)
-    match = re.search(r'="([^"]*)"', out or "")
+    # macOS 27 prints `"Name" ASN:...` first (and may quote the bundle ID later); older releases print `"LSDisplayName"="Name"`.
+    match = re.match(r'\s*"([^"]+)"\s+ASN:', out or "") or re.search(r'="([^"]*)"', out or "")
     if code != 0 or timed_out or not match:
         return "unknown"
     name = match.group(1)

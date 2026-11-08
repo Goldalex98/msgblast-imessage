@@ -69,3 +69,7 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 ## 2026-11-08 13:45 ET: spike (g) passes, Task 9 done
 - Self-signed certificate signing keeps the grants: the designated requirement is bundle ID plus certificate, so a new build with a new code hash is still the same app to TCC. No Personal Team or paid account needed.
 - `grants_kept` reflects what the app's permission screen showed, as Alex read and typed it; the probe doesn't read the TCC database itself (by design: dev tools don't open it).
+
+## 2026-11-08 14:05 ET: send probe's frontmost check fixed for macOS 27
+- c2 reported `frontmost_before/after = unknown`. macOS 27's `lsappinfo info -only name` prints `"Name" ASN:...` instead of `"LSDisplayName"="Name"`, and can quote the bundle ID on a later line, so the old pattern found nothing (or would have matched the bundle ID). The probe now reads the leading quoted name first and falls back to the old form. Test-first; Python gate 175 OK, 1 skipped.
+- c2's own focus reading is lost; spike (d) uses c1 and c3, plus Alex's eyes on c2. The send path and its checks are unchanged.
