@@ -7,9 +7,11 @@ Percentages and verdicts only (plan rule: no absolute message counts). Every run
 | (a) | How many recent bodies are only in `attributedBody`, and does the decoder recover them? | 3.3% `attributedBody`-only; the decoder returned a string for 100% of them. 0.2% have neither column, with no attachment. On rows with both, 96.7% decode exactly to `text`. | Needed; phase 1 uses `NSUnarchiver` (Alex, 2026-11-08) |
 | (b) | Can group threads be read with a sender for every inbound message? | 100% of inbound group messages resolve to a sender handle; 0% style/participant mismatches; 11% of active groups have a display name; 1.2% of group messages carry a reply link. | Pass for reading |
 | (f awake) | iPhone-to-Mac sync delay while the Mac is awake | All sends seen within one 2 s poll: median 0.6 s, max 1.6 s, all iMessage, no sleeps. | Pass: sync isn't the bottleneck |
+| (f asleep) | Do iPhone sends reach the Mac while its lid is closed? | 20 min with the lid closed: 7 sleep gaps detected; every send was seen within 1.8–5.5 s of being sent, at most 12 s after a wake. | Pass: no sync reason for the 24 h nudge |
 | (g) | Do Full Disk Access and Automation survive a rebuild from a new commit? | Two builds from different commits, both signed with the self-signed local certificate: same designated requirement (bundle ID plus certificate, no code hash), new code hash, and both grants still shown by the app after reinstalling over the old copy. | Pass: signing method settled |
 | (c) | Can the identity-checked AppleScript path send to an existing 1:1 and group thread exactly once, and refuse a changed member set? | 1:1 and group (Messages running and not running): sent, each found exactly once in `chat.db` within 0.5–2.6 s. Tampered member list: refused before submitting (9004), nothing sent. | Pass: group sends go (spec §10.8) |
 | (d) | Does a send pull Messages to the front? | Terminal stayed frontmost before and after every send it measured (1:1, and group with Messages quit). With Messages quit, the send launched it in the background and took 2.3 s instead of 0.2 s. | Pass: no focus steal |
+| (e) prelim | Does the HomeChat edge let a plain, non-Anthropic client reach the origin? | One GET to the bot hostname's root: answered through Cloudflare (`cf-ray` present) in 169 ms with 404; no Access redirect, no WAF block. | Provisional: a token-authenticated POST route behind Caddy, no edge change |
 
 ## (a) Bodies stored only in `attributedBody` (2026-11-08)
 
@@ -54,6 +56,31 @@ Percentages and verdicts only (plan rule: no absolute message counts). Every run
 - Probe fix found here: macOS 27's `lsappinfo` output broke the frontmost check (all `unknown` on c2); fixed test-first before c1 and c3.
 - Alex confirmed c1, c2 and c3 all arrived. Not proven: SMS sends; sends from the fork app itself rather than `osascript` in Terminal.
 
+## (e) preliminary: reaching HomeChat (2026-11-08)
+
+- `reach.py` from the MacBook: one GET, no redirects followed, to the root of the HomeChat bot's public hostname (not the Anthropic-only connector hostname). The report never holds the URL.
+- Result: HTTP 404 through Cloudflare (`server_kind=cloudflare`, `cf_ray=true`), 169 ms, `access_redirect=false`. The edge passed the request through; the 404 is the origin's Caddy, which proxies only named routes.
+- **Uplink path, provisional:** a new token-authenticated `POST` route on the bot hostname behind Caddy, like the existing alert route. No Cloudflare Access service token and no edge rule change look necessary. Edge or Caddy changes stay Alex-approved under HomeChat's rules.
+- Not proven: a real POST to a real route. That needs the probe route in `homechat-bot` (queued there, spec §9).
+
+## (f) asleep: sync with the lid closed (2026-11-08)
+
+- 20-minute watch, lid closed for most of it, 2 s polls; Alex sent texts from the iPhone while it was closed. As with the awake run, every send from any device counts.
+- 7 gaps in polling show the Mac slept, with short background wakes. Every send was seen 1.8–5.5 s after its own timestamp, and 0–12 s after the wake that caught it. The Mac picked messages up during those wakes; it didn't wait for the lid to open.
+- **Phase 1 effect:** iPhone replies clear flags within seconds whether the Mac is awake or asleep. The 24 h "replied on your phone? reply `N done`" nudge (spec §10.1) stays as written, as a safety net for a Mac that is off or offline, not for sync delay.
+- Not proven: a long sleep (overnight) or Low Power Mode, where background wakes may be rarer; the fork app, rather than a Terminal script, getting time in those wakes. Phase 1's persisted ROWID cursor makes catch-up complete either way.
+
+## Phase 1 decisions from phase 0
+
+| Question | Decision | From |
+|---|---|---|
+| `attributedBody` decoder | Swift `NSUnarchiver` into `NSAttributedString`; Python decoder kept as the fixture oracle | (a), Alex |
+| Group sends (spec §10.8) | Go: identity, service, member-count and member checks proven on a real group | (b), (c) |
+| Focus | Sends run from the background; Messages never takes focus, even when launched | (d) |
+| Signing method | Self-signed local certificate; no Personal Team or paid program | (g) |
+| Uplink path | Token-authenticated `POST` route on the bot hostname behind Caddy; no Access token or edge change (provisional until a real POST) | (e) prelim |
+| 24 h nudge (spec §10.1) | Keep as written, for a Mac that is off or offline; sync delay doesn't need it | (f) |
+
 ## Still to run
 
-- (e) reach and (f) asleep (Task 11).
+- (e) full test: a real `POST` from the Mac, once `homechat-bot` has a probe route (spec §9).
