@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v)",
+      "Bash(xcodebuild -project msgblast.xcodeproj -scheme msgblast -configuration Debug -derivedDataPath build/contributor-tests -destination 'platform=macOS,arch=arm64' MSGBLAST_APP_BUNDLE_IDENTIFIER=com.msgblast.contributor-tests ASSETCATALOG_COMPILER_APPICON_NAME=AppIconDemo -only-testing:msgblastTests test)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.local.env)",
+      "Read(./**/*.local.json)",
+      "Read(./permission-testing.local.json)",
+      "Read(./.permission-test-receipts/**)",
+      "Read(./.local/**)",
+      "Read(~/Library/Messages/**)",
+      "Read(//Users/*/Library/Messages/**)",
+      "Read(~/Library/Application Support/AddressBook/**)",
+      "Read(//Users/*/Library/Application Support/AddressBook/**)"
+    ]
+  }
+}
