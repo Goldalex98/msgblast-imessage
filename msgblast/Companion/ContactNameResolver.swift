@@ -33,8 +33,13 @@ extension CNContactStore: ContactSource {
 final class ContactNameResolver: CompanionNameResolving, @unchecked Sendable {
     private let store: ContactSource
     private let refreshEvery: TimeInterval
+    private struct Index {
+        var emails: [String: String] = [:]
+        /// By the last 10 digits. `full` is every digit when the number carried an explicit "+" country code.
+        var phones: [String: [(full: String?, name: String)]] = [:]
+    }
     private let lock = NSLock()
-    private var index: [String: String] = [:]
+    private var index = Index()
     private var loadedAt: Date?
 
     init(store: ContactSource = CNContactStore(), refreshEvery: TimeInterval = 600) {
@@ -46,37 +51,61 @@ final class ContactNameResolver: CompanionNameResolving, @unchecked Sendable {
 
     func names(for handles: [String]) async -> [String: String] {
         guard store.authorized() else {
-            lock.withLock { index = [:]; loadedAt = nil }
+            lock.withLock { index = Index(); loadedAt = nil }
             return [:]
         }
         let table = currentIndex()
         var result: [String: String] = [:]
         for handle in handles {
-            if let key = Self.key(handle), let name = table[key] { result[handle] = name }
+            if let name = Self.lookup(handle, in: table) { result[handle] = name }
         }
         return result
     }
 
-    private func currentIndex() -> [String: String] {
+    private func currentIndex() -> Index {
         if let cached = lock.withLock({ loadedAt.map { Date().timeIntervalSince($0) < refreshEvery } == true ? index : nil }) {
             return cached
         }
-        var fresh: [String: String] = [:]
+        var fresh = Index()
         for person in store.allHandles() {
             for handle in person.handles {
-                if let key = Self.key(handle), fresh[key] == nil { fresh[key] = person.name }
+                switch Self.key(handle) {
+                case .email(let email)?: if fresh.emails[email] == nil { fresh.emails[email] = person.name }
+                case .phone(let last10, let full)?: fresh.phones[last10, default: []].append((full, person.name))
+                case nil: break
+                }
             }
         }
         lock.withLock { index = fresh; loadedAt = Date() }
         return fresh
     }
 
-    /// Emails lowercased; phone numbers by their last 10 digits.
-    static func key(_ handle: String) -> String? {
+    private static func lookup(_ handle: String, in table: Index) -> String? {
+        switch key(handle) {
+        case .email(let email)?:
+            return table.emails[email]
+        case .phone(let last10, let full)?:
+            // Two explicit country codes must agree in full; otherwise the national number decides.
+            return table.phones[last10]?.first { candidate in
+                guard let full, let other = candidate.full else { return true }
+                return full == other
+            }?.name
+        case nil:
+            return nil
+        }
+    }
+
+    enum Key: Equatable {
+        case email(String)
+        case phone(last10: String, full: String?)
+    }
+
+    /// Emails lowercased; phone numbers by their last 10 digits, plus every digit when written with "+".
+    static func key(_ handle: String) -> Key? {
         let trimmed = handle.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.contains("@") { return trimmed.lowercased() }
-        let digits = trimmed.filter(\.isASCII).filter(\.isNumber)
+        if trimmed.contains("@") { return .email(trimmed.lowercased()) }
+        let digits = String(trimmed.filter(\.isASCII).filter(\.isNumber))
         guard !digits.isEmpty else { return nil }
-        return String(digits.suffix(10))
+        return .phone(last10: String(digits.suffix(10)), full: trimmed.hasPrefix("+") ? digits : nil)
     }
 }

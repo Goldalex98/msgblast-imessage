@@ -27,6 +27,13 @@ final class ContactNameResolverTests: XCTestCase {
         XCTAssertEqual(names, [:])
     }
 
+    func test_differentCountryCodesDontMatch() async {
+        let contacts = FakeContacts(people: [("Abroad Person", ["+44 555 010 0001"]), ("Local Person", ["555-010-0002"])])
+        let names = await ContactNameResolver(store: contacts).names(for: ["+15550100001", "+445550100001", "+15550100002"])
+        XCTAssertEqual(names, ["+445550100001": "Abroad Person", "+15550100002": "Local Person"],
+                       "explicit, different country codes never match; a contact without one matches by national number")
+    }
+
     func test_deniedReturnsNoNames() async {
         let resolver = ContactNameResolver(store: FakeContacts(isAllowed: false))
         XCTAssertFalse(resolver.isAuthorized)
