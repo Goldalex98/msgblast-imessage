@@ -58,3 +58,14 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 
 ## 2026-11-08 11:20 ET: standing merge approval
 - Alex changed the rule: Claude merges fork PRs itself once their fork CI run is green, instead of asking per PR. It matches his rule for his other repos. Unchanged: nothing goes upstream without his yes, real sends still need their own typed yes, and `homechat-bot` follows its own rules.
+
+## 2026-11-08 13:35 ET: Task 9 build 1
+- `codesign` from Claude's shell fails with `errSecInternalComponent` on a new key: the Keychain's allow prompt can't appear for a process with no window. One build from Terminal.app with Always Allow added `codesign` to the key's access list. Later builds should sign from Claude's shell; build 2 is the test of that.
+- This commit is the "any docs commit" Task 9 Step 3 asks for, so build 2 has a different source SHA from build 1.
+
+## 2026-11-08 13:40 ET: Task 9 pair redone as build 2 → build 3
+- Build 1's `sign_check.py record` left no report in `.local/spikes/`, so `compare` had nothing to pair with. Build 1 was already overwritten, so it couldn't be re-recorded. Build 2's report (recorded on build 2's own screen) becomes the "before", and build 3, from this commit, the "after". The comparison is the same; only the labels move.
+
+## 2026-11-08 13:45 ET: spike (g) passes, Task 9 done
+- Self-signed certificate signing keeps the grants: the designated requirement is bundle ID plus certificate, so a new build with a new code hash is still the same app to TCC. No Personal Team or paid account needed.
+- `grants_kept` reflects what the app's permission screen showed, as Alex read and typed it; the probe doesn't read the TCC database itself (by design: dev tools don't open it).
