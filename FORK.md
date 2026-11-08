@@ -30,3 +30,4 @@ as they change:
 | Upstream file | Changed since | Why |
 |---|---|---|
 | `.gitignore` | 2026-11-07 | Local Claude Code and tool files |
+| `scripts/generate_project.py` | 2026-11-08 | Compiles the companion's `ContactNameResolver.swift` into the tests target, beside upstream's `MessagesAccessGuide.swift` case |
