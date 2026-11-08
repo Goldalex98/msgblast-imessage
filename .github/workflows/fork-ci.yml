@@ -31,7 +31,11 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 
   native:
-    if: github.repository == 'Goldalex98/msgblast-imessage'
+    # GitHub-hosted (ephemeral) image, not self-hosted. Still only for this repo's own branches:
+    # PRs from other forks get the Linux job only.
+    if: >-
+      github.repository == 'Goldalex98/msgblast-imessage' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: xcode-27
     timeout-minutes: 60
     env:
