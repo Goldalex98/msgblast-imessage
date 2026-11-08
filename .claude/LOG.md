@@ -17,3 +17,8 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 ## 2026-11-07 21:30 ET: commit identity and folder trust
 - **Commit email:** this repo's commits use the GitHub noreply address (local `git config user.email` in this clone only), because a public repo would otherwise publish the personal address in its history. The setup commit was rewritten before its first push, so no commit with the personal address was ever pushed. Set the same local email in the MacBook clone.
 - **Folder trust:** the first headless agent runs warned that the project allow rules were ignored. The parent folder is trusted, so no trust prompt appears, but the CLI checks this folder's own flag, which was false. Alex set it; the re-run showed no warning. Lesson: read `claude -p` stderr in live proofs, because 0 denials alone can mean auto mode allowed the command.
+
+## 2026-11-07 21:50 ET: phase 0 plan approved
+- Alex approved `docs/superpowers/plans/2026-11-07-phase0-spikes.md`. It runs inline (his standing rule: inline unless he picks subagent-driven).
+- Why probes in Python, not Swift: they run in the existing Linux gate against synthetic databases, and they can be read before they ever touch the real `chat.db`. Phase 1 ports the decoder to Swift.
+- Why reuse upstream's preview builder for the fork app: it already isolates the bundle ID, the support folder and Sparkle, so no upstream file needs editing. The fork variant uses the blue icon because the builder expects blue-green only for its own `development` variant.
