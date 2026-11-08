@@ -65,3 +65,7 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 
 ## 2026-11-08 13:40 ET: Task 9 pair redone as build 2 → build 3
 - Build 1's `sign_check.py record` left no report in `.local/spikes/`, so `compare` had nothing to pair with. Build 1 was already overwritten, so it couldn't be re-recorded. Build 2's report (recorded on build 2's own screen) becomes the "before", and build 3, from this commit, the "after". The comparison is the same; only the labels move.
+
+## 2026-11-08 13:45 ET: spike (g) passes, Task 9 done
+- Self-signed certificate signing keeps the grants: the designated requirement is bundle ID plus certificate, so a new build with a new code hash is still the same app to TCC. No Personal Team or paid account needed.
+- `grants_kept` reflects what the app's permission screen showed, as Alex read and typed it; the probe doesn't read the TCC database itself (by design: dev tools don't open it).
