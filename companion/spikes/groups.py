@@ -43,10 +43,10 @@ def probe_groups(conn, days: int = 14, now_unix: Optional[float] = None) -> dict
         "groups_with_display_name": 0,
     }
     chats = conn.execute(
-        "SELECT c.ROWID, c.style, COALESCE(c.display_name, ''),"
+        "SELECT c.ROWID, c.style, (c.display_name IS NOT NULL AND c.display_name != ''),"
         " (SELECT COUNT(DISTINCT ch.handle_id) FROM chat_handle_join ch WHERE ch.chat_id = c.ROWID)"
         " FROM chat c").fetchall()
-    for chat_id, style, display_name, participants in chats:
+    for chat_id, style, has_display_name, participants in chats:
         key = {GROUP_STYLE: "group_43", ONE_TO_ONE_STYLE: "one_to_one_45"}.get(style, "other")
         report["chats_by_style"][key] += 1
         if (style == GROUP_STYLE and participants <= 1) or (style == ONE_TO_ONE_STYLE and participants > 1):
@@ -63,7 +63,7 @@ def probe_groups(conn, days: int = 14, now_unix: Optional[float] = None) -> dict
             continue
         report["groups_active"] += 1
         report["participants"][_bucket(participants)] += 1
-        report["groups_with_display_name"] += int(bool(display_name))
+        report["groups_with_display_name"] += int(bool(has_display_name))
         for is_from_me, handle_id, handle_exists, reply_to in rows:
             if is_from_me:
                 report["group_outgoing"] += 1

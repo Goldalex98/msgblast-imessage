@@ -22,6 +22,7 @@ import spikelib  # noqa: E402
 
 SEND_CAP = 6
 DEFAULT_COUNT = spikelib.DEFAULT_OUT / "send-count"
+BLOCK_NAME = "send-blocked"
 TAMPER_HANDLE = "tamper@example.invalid"
 TARGETS = ("group", "one_to_one")
 LABEL_RE = re.compile(r"^[a-z0-9]{1,16}$")
@@ -162,6 +163,11 @@ def write_count(path: Path, value: int) -> None:
         file.write(f"{value}\n")
 
 
+def blocked_path(count_path: Path) -> Path:
+    """Marker beside the counter: present while a send's outcome is unknown, so it is never repeated."""
+    return Path(count_path).parent / BLOCK_NAME
+
+
 def _with_prefix(chat_id: str, id_prefix: Optional[str]) -> str:
     if not id_prefix:
         return chat_id
@@ -184,6 +190,12 @@ def run_probe(config: dict, target: str, label: str, preflight_only: bool, tampe
     count = read_count(count_file)
     if not preflight_only and count >= SEND_CAP:
         raise spikelib.ProbeError(5, f"Phase 0 send cap reached ({SEND_CAP}); nothing sent.")
+    block = blocked_path(count_file)
+    if not preflight_only and block.exists():
+        raise spikelib.ProbeError(7, "An earlier send's outcome is unknown, so no new send runs. Check with the "
+                                     f"test contacts, then delete .local/spikes/{BLOCK_NAME} yourself.")
+    if not preflight_only:
+        spikelib.open_ro(db_path).close()  # without chat.db access the send could not be checked afterwards
 
     handles = list(entry["handles"])
     if tamper:
@@ -199,16 +211,29 @@ def run_probe(config: dict, target: str, label: str, preflight_only: bool, tampe
         raise spikelib.ProbeError(6, "Not confirmed; nothing sent.")
 
     front_before, running_before = frontmost(runner), messages_running(runner)
+    if not preflight_only:
+        write_count(count_file, count + 1)  # reserved before the send, so an interrupt still counts it
+        write_count(block, 1)
     attempted = clock()
     returncode, stdout, timed_out = runner(["osascript", "-"], stdin=script, timeout=OSASCRIPT_TIMEOUT_S)
     elapsed_ms = int(round((clock() - attempted) * 1000))
     outcome, code = parse_outcome(returncode, stdout, timed_out)
     front_after, running_after = frontmost(runner), messages_running(runner)
 
+    if not preflight_only:
+        if outcome == "not_sent":
+            write_count(count_file, count)  # Messages refused before submitting: release the reservation
+        if outcome != "ambiguous":
+            block.unlink()
+    print(f"outcome: {outcome}" + ("  (ambiguous: do NOT resend)" if outcome == "ambiguous" else ""))
+
     anchor = {"rows": None, "delay_s": None}
     if not preflight_only and outcome in ("sent", "ambiguous"):
-        write_count(count_file, count + 1)
-        anchor = find_anchor(db_path, chat_id, text, attempted, clock=clock, sleep=sleep)
+        print("Watching chat.db for 30 s to count copies of the message...")
+        try:
+            anchor = find_anchor(db_path, chat_id, text, attempted, clock=clock, sleep=sleep)
+        except Exception:  # noqa: BLE001 - the send already happened; still write the report
+            anchor = {"rows": None, "delay_s": None}
     return {
         "label": label, "target": target, "preflight_only": preflight_only, "tamper": tamper,
         "outcome": outcome, "code": code, "elapsed_ms": elapsed_ms,
@@ -230,7 +255,6 @@ def main() -> int:
     report = run_probe(spikelib.load_config(), args.target, args.label, args.preflight, args.tamper,
                        args.id_prefix, db_path=args.db)
     print(spikelib.write_report(f"send-{args.label}", report, ALLOWED | {args.label}))
-    print(f"outcome: {report['outcome']}" + ("  (ambiguous: do NOT resend)" if report["outcome"] == "ambiguous" else ""))
     return 0
 
 

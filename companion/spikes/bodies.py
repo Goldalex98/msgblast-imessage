@@ -17,8 +17,9 @@ import spikelib  # noqa: E402
 
 def decode_attributed_body(blob: Optional[bytes]) -> Optional[str]:
     """Pull the NSString payload out of a typedstream NSAttributedString blob."""
-    if not blob:
+    if not blob or not isinstance(blob, (bytes, bytearray, memoryview)):
         return None
+    blob = bytes(blob)
     i = blob.find(b"NSString")
     if i < 0:
         return None

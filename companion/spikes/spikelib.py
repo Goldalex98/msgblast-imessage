@@ -39,6 +39,8 @@ def open_ro(path: str) -> sqlite3.Connection:
         conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchall()
     except sqlite3.DatabaseError as error:
         raise ProbeError(2, FDA_HINT) from error
+    # Undecodable TEXT would otherwise raise an error that quotes the column's content.
+    conn.text_factory = lambda raw: raw.decode("utf-8", "replace")
     return conn
 
 
@@ -108,3 +110,7 @@ def run_main(fn: Callable[[], int]) -> int:
     except ProbeError as error:
         print(str(error), file=sys.stderr)
         return error.code
+    except Exception as error:  # noqa: BLE001 - a traceback or message could quote chat.db content or the URL
+        print(f"Probe stopped: {type(error).__name__} (details hidden; they may contain private data).",
+              file=sys.stderr)
+        return 1
