@@ -45,14 +45,14 @@ Percentages and verdicts only (plan rule: no absolute message counts). Every run
 ## (c) and (d) Real sends and focus (2026-11-08)
 
 - Run by Alex in Terminal.app after his typed yes, to a 1:1 test chat and a group with two other people; every send needed `SEND` typed at the prompt. 3 real sends of the 6 allowed; the tampered run was refused, so its slot was released.
-- c1, 1:1, Messages open: `sent`, `anchor_rows=1`, found in 0.6 s.
+- c1, 1:1, Messages open: `sent`, `anchor_rows=1`, found in 0.6 s; arrival confirmed.
 - c2, group, Messages open: `sent`, `anchor_rows=1`, found in 0.5 s; arrival confirmed by Alex. Its focus readings were lost to a probe bug (below).
-- c3, group, Messages quit: `sent`, `anchor_rows=1`, found in 2.6 s; Messages was launched by the send and stayed in the background.
+- c3, group, Messages quit: `sent`, `anchor_rows=1`, found in 2.6 s; Messages was launched by the send and stayed in the background; arrival confirmed.
 - c4, group with one expected member swapped for a fake address: `not_sent`, code 9004 (member check), before any submission.
 - **(d) verdict:** Terminal stayed frontmost on c1, c3 and c4, so a send doesn't raise Messages, even when it has to launch it. Phase 1's send executor can run from the background app.
 - **Group sends:** go. The identity, service, member-count and member checks all ran on a real group and refused a changed member set.
 - Probe fix found here: macOS 27's `lsappinfo` output broke the frontmost check (all `unknown` on c2); fixed test-first before c1 and c3.
-- Not proven: confirmation from every recipient that c1 and c3 arrived exactly once (`anchor_rows` shows one local copy, not delivery); SMS sends; sends from the fork app itself rather than `osascript` in Terminal.
+- Alex confirmed c1, c2 and c3 all arrived. Not proven: SMS sends; sends from the fork app itself rather than `osascript` in Terminal.
 
 ## Still to run
 
