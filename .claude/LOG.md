@@ -31,3 +31,8 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 
 ## 2026-11-07 22:15 ET: phase 0 code merged
 - Alex said go: PR #2 (plan) then PR #3 (probes) merged into `main` locally as merge commits under the noreply identity, as with PR #1.
+
+## 2026-11-07 22:25 ET: fork CI
+- Alex asked for CI. Upstream's six workflows stay off (several are release, signing and notarization jobs that expect upstream's secrets); each is switched off by name, so turning Actions back on runs only the fork's own `fork-ci.yml`.
+- Why `xcode-27`: it is GitHub's hosted Xcode 27 image (public preview, arm64), the same label upstream uses; the job pins Xcode 27.0 like upstream. The Linux job mirrors the Linux gate; the macOS job runs the Python tests and the native core tests exactly as `docs/testing.md` writes them.
+- No secrets, no artifacts, `contents: read`, checkout without persisted credentials, and every job is limited to this repository.
