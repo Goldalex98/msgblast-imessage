@@ -58,3 +58,7 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 
 ## 2026-11-08 11:20 ET: standing merge approval
 - Alex changed the rule: Claude merges fork PRs itself once their fork CI run is green, instead of asking per PR. It matches his rule for his other repos. Unchanged: nothing goes upstream without his yes, real sends still need their own typed yes, and `homechat-bot` follows its own rules.
+
+## 2026-11-08 13:35 ET: Task 9 build 1
+- `codesign` from Claude's shell fails with `errSecInternalComponent` on a new key: the Keychain's allow prompt can't appear for a process with no window. One build from Terminal.app with Always Allow added `codesign` to the key's access list. Later builds should sign from Claude's shell; build 2 is the test of that.
+- This commit is the "any docs commit" Task 9 Step 3 asks for, so build 2 has a different source SHA from build 1.

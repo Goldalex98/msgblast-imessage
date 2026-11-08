@@ -1,8 +1,8 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-08 11:05 ET
-**At:** Task 8 done on the MacBook: spikes (a), (b) and (f awake) ran and their verdicts are in `docs/superpowers/spikes/2026-11-phase0-results.md`; decoder decision NSUnarchiver.
-**Next:** merge PR #5 (Task 8 records) when fork CI is green, then Task 9: permission grants across rebuilds.
+**Updated:** 2026-11-08 13:35 ET
+**At:** Task 9 build 1 signed with the local certificate, installed, granted and recorded (`sign_check.py record --label build1`).
+**Next:** Task 9 Step 3: rebuild from this commit as build 2, reinstall over build 1, then Alex records build 2 and runs `sign_check.py compare`.
 **Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 merged to `main` (PRs #2, #3); Task 8 done on the MacBook (not yet merged); Tasks 9–11 next.
 **Milestones:** Setup ✓ · Spikes (now) · Read and flag · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
@@ -38,6 +38,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 2026-11-07: forked upstream at `8fd9191` (public, `main` only, Actions disabled); added CLAUDE.md, `.claude/` (settings, agents, STATUS, LOG), FORK.md, `.gitignore` entries and the approved design.
 
 ## EVIDENCE
+- Task 9 build 1 (2026-11-08 13:11 ET, `main` `76dc5fa`): signed with the self-signed local identity, `codesign --verify --deep --strict` passes in `/Applications`; designated requirement is bundle ID plus certificate leaf (no cdhash); Sparkle feed and key are empty in Info.plist (runtime unverified). The first re-sign failed with `errSecInternalComponent` because Claude's process can't show the key-access prompt; Alex ran the build once in Terminal.app and chose Always Allow.
 - Spike (f awake) on the MacBook (2026-11-08, 10 min, 2 s polls): 8 sends seen, all within one poll (median 0.6 s, max 1.6 s), iMessage only, 0 sleeps.
 - Spikes (a), (b) on the MacBook (2026-11-08 08:33 ET, Terminal.app with Full Disk Access, 14-day window, counts-only reports pasted by Alex; Claude's tools are denied `.local/`): (a) 3.3% of bodies `attributedBody`-only, all decoded; rows with both match exactly 96.7%. (b) 100% of inbound group messages have a sender; 0 style mismatches; 11% of active groups named.
 - MacBook clone (2026-11-08 07:50 ET): `main` at `1db674d`, level with `origin`; `upstream` push disabled; local `user.email` set to the noreply address; `gh` default repo is the fork. Versions: macOS 27.2, `arm64`, `/usr/bin/python3` 3.9.6, Xcode 27.2 (27B52), Swift 6.4.2, macOS SDK 27.2, selected at 08:01 ET (first-launch status OK).
