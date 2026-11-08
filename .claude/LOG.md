@@ -80,6 +80,15 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - c2 ran before the frontmost fix, so its focus reading is lost; the verdict rests on c1, c3 and c4. c3 is the strongest case: Messages wasn't running, the send launched it, and Terminal stayed in front.
 - 3 of the 6 phase 0 sends are used; the rest stay unused unless a later spike needs them.
 
+## 2026-11-08 16:30 ET: spike (e) preliminary
+- Probed the bot hostname, not the connector hostname: the connector only admits Anthropic by design, and the Mac's uplink would go to the bot. The hostname lives only in the git-ignored local config; it's named in `homechat-bot`'s own docs, not here.
+- A 404 through Cloudflare with no Access redirect means the edge isn't the obstacle; the route is. That points the uplink at a token-authenticated Caddy route rather than an Access service token, pending a real POST.
+
+## 2026-11-08 17:30 ET: spike (f asleep), phase 0 spikes done
+- Messages reach the Mac during sleep: background wakes picked each send up within seconds, so the lid doesn't gate sync. The 24 h nudge stays as the spec has it, for an offline Mac; no spec change.
+- Phase 0 ends with one open item, spike (e)'s full test, which needs a probe route built in `homechat-bot` under its rules. The six phase 1 decisions are tabled in the results doc.
+- Terminal kept Full Disk Access and Automation only for the spikes; Alex revokes both now (plan Task 11 Step 4).
+
 ## 2026-11-08 17:40 ET: phase 1 Mac plan drafted
 - `docs/superpowers/plans/2026-11-08-phase1-mac-read-and-uplink.md`, 10 tasks: contract, models, decoder, reader, scrubber, config/token/client, service, Contacts names, status section, acceptance runbook. No sending.
 - `NSUnarchiver` raises Objective-C exceptions on corrupt input and the project has no Objective-C to catch them, so a structural pre-check (the spike's scanner rules) gates every call. The residual risk is a structurally valid but internally corrupt blob.
