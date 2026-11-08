@@ -18,6 +18,20 @@ final class CompanionScrubberTests: XCTestCase {
         }
     }
 
+    func test_ssnVariants() {
+        XCTAssertEqual(CompanionScrubber.scrub("ssn 123.45.6789 ok"), "ssn [SSN removed] ok")
+        XCTAssertEqual(CompanionScrubber.scrub("１２３-４５-６７８９"), "[SSN removed]")
+        XCTAssertEqual(CompanionScrubber.scrub("pi is 3.14159"), "pi is 3.14159")
+    }
+
+    func test_verificationVariantsSkipped() {
+        for text in ["Your WhatsApp code: 123-456", "Your code is 482 913", "Your PIN is 4821",
+                     "G-482913 is your verification code"] {
+            XCTAssertTrue(CompanionScrubber.isSkipped(senderHandle: "+15550100001", text: text), text)
+        }
+        XCTAssertFalse(CompanionScrubber.isSkipped(senderHandle: "+15550100001", text: "pinned it, see you at 1234 Main St"))
+    }
+
     func test_shortCodeSenderSkipped() {
         XCTAssertTrue(CompanionScrubber.isSkipped(senderHandle: "72975", text: "hello"))
         XCTAssertTrue(CompanionScrubber.isSkipped(senderHandle: "262966", text: nil))

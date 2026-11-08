@@ -5,10 +5,13 @@ public enum CompanionScrubber {
     public static let maxTextLength = 4000
     static let truncationSuffix = "…[truncated]"
 
-    // Anything shaped like a US SSN, bare 9-digit numbers included on purpose.
-    private static let ssn = try! NSRegularExpression(pattern: "(?<![0-9])[0-9]{3}[- ]?[0-9]{2}[- ]?[0-9]{4}(?![0-9])")
-    private static let keyword = #"\b(code|passcode|otp|verification|one[- ]time)\b"#
-    private static let number = #"(?<![0-9])[0-9]{4,8}(?![0-9])"#
+    // Anything shaped like a US SSN, bare 9-digit numbers included on purpose. \p{Nd} also catches full-width and
+    // other non-ASCII digits.
+    private static let ssn = try! NSRegularExpression(
+        pattern: #"(?<!\p{Nd})\p{Nd}{3}[-. ]?\p{Nd}{2}[-. ]?\p{Nd}{4}(?!\p{Nd})"#)
+    private static let keyword = #"\b(code|passcode|otp|verification|one[- ]time|pin|2fa|mfa)\b"#
+    // 4–8 digits, or the split 6-digit form ("123-456", "123 456") some services send.
+    private static let number = #"(?<!\p{Nd})(?:\p{Nd}{4,8}|\p{Nd}{3}[- ]\p{Nd}{3})(?!\p{Nd})"#
     private static let verification = try! NSRegularExpression(
         pattern: "\(keyword)[\\s\\S]{0,40}?\(number)|\(number)[\\s\\S]{0,40}?\(keyword)", options: [.caseInsensitive])
 
