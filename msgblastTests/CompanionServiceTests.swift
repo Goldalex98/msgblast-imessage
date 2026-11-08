@@ -202,6 +202,32 @@ final class CompanionServiceTests: XCTestCase {
         XCTAssertEqual(uplink.batches.count, 1)
     }
 
+    func test_pauseDuringPostIsKept() async throws {
+        try configure(cursor: 0)
+        let f = try CompanionFixture()
+        try f.addMessage(chats: [try directChat(f)], text: "m", handle: alice)
+        let s = service(f.url.path)
+        uplink.onPost = { _ = await s.setPaused(true) }
+        let status = await s.tick()
+        let saved = CompanionConfig.load(from: configURL)
+        XCTAssertTrue(saved.paused, "the cursor save must not undo a pause made while posting")
+        XCTAssertEqual(saved.cursor, 1, "the accepted batch is still recorded")
+        XCTAssertEqual(status.state, .paused)
+    }
+
+    func test_overlappingTicksPostOnce() async throws {
+        try configure(cursor: 0)
+        let f = try CompanionFixture()
+        try f.addMessage(chats: [try directChat(f)], text: "m", handle: alice)
+        let s = service(f.url.path)
+        let nested = NestedStatus()
+        uplink.onPost = { await nested.set(await s.tick()) }
+        _ = await s.tick()
+        XCTAssertEqual(uplink.batches.count, 1, "a tick that starts while one is posting does nothing")
+        let inner = await nested.value
+        XCTAssertEqual(inner?.state, .uplinking)
+    }
+
     func test_unauthorizedStops() async throws {
         try configure(cursor: 0)
         let f = try CompanionFixture()
@@ -270,6 +296,11 @@ final class CompanionServiceTests: XCTestCase {
     }
 }
 
+actor NestedStatus {
+    var value: CompanionStatus?
+    func set(_ status: CompanionStatus) { value = status }
+}
+
 final class TestClock: @unchecked Sendable {
     private let lock = NSLock()
     private var value: Date
@@ -296,6 +327,8 @@ final class RecordingUplink: CompanionUplinking, @unchecked Sendable {
     private let lock = NSLock()
     private var recorded: [UplinkBatch] = []
     private var queue: [Result<UplinkAck, UplinkError>] = []
+    /// Runs inside post(), while the service is suspended awaiting it.
+    nonisolated(unsafe) var onPost: (@Sendable () async -> Void)?
     var batches: [UplinkBatch] { lock.lock(); defer { lock.unlock() }; return recorded }
     func script(_ responses: [Result<UplinkAck, UplinkError>]) { lock.lock(); queue = responses; lock.unlock() }
     func post(_ batch: UplinkBatch) async throws(UplinkError) -> UplinkAck {
@@ -303,6 +336,7 @@ final class RecordingUplink: CompanionUplinking, @unchecked Sendable {
             recorded.append(batch)
             return queue.isEmpty ? .success(UplinkAck(acceptedCursor: batch.cursor)) : queue.removeFirst()
         }
+        if let onPost { self.onPost = nil; await onPost() }
         return try next.get()
     }
 }

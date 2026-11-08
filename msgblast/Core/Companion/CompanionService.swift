@@ -55,6 +55,7 @@ public actor CompanionService {
     private var stop: (key: String, reason: String)?
     /// While nothing has been accepted yet, the first-run start lives here, not in the config.
     private var firstRunCursor: Int64?
+    private var inFlight = false
     public private(set) var status = CompanionStatus(state: .idle)
 
     public init(databasePath: String, configURL: URL, tokens: any CompanionTokenStoring,
@@ -73,6 +74,10 @@ public actor CompanionService {
     }
 
     public func tick() async -> CompanionStatus {
+        // The actor is reentrant across the awaits below, so a timer tick can arrive mid-post. Let it go.
+        if inFlight { return status }
+        inFlight = true
+        defer { inFlight = false }
         var config = CompanionConfig.load(from: configURL)
         if config.paused { closeReader(); return update(.paused, config: config) }
         guard let url = config.uplinkURL, let token = tokens.read() else { return update(.notConfigured, config: config) }
@@ -146,6 +151,7 @@ public actor CompanionService {
             caughtUp = isCaughtUp(reader, cursor: accepted)
             status.lastUplinkAt = now()
             status.lastBatchCount = batch.messages.count
+            if config.paused { closeReader(); return update(.paused, config: config) }
             return update(.idle, config: config)
         } catch {
             switch error {
@@ -195,11 +201,14 @@ public actor CompanionService {
     }
 
     /// While nothing has been accepted, an orphan-only stretch moves the in-memory start only, so first_run holds.
+    /// Otherwise only the cursor is written, onto the config as it is on disk now: a pause or URL change made
+    /// while this tick was awaiting is kept, and `config` is refreshed to match.
     private func advance(to cursor: Int64, firstRun: Bool, config: inout CompanionConfig) {
         if firstRun {
             firstRunCursor = cursor
             return
         }
+        config = CompanionConfig.load(from: configURL)
         config.cursor = cursor
         firstRunCursor = nil
         try? config.save(to: configURL)
