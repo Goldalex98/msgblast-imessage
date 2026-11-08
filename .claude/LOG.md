@@ -88,3 +88,10 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Messages reach the Mac during sleep: background wakes picked each send up within seconds, so the lid doesn't gate sync. The 24 h nudge stays as the spec has it, for an offline Mac; no spec change.
 - Phase 0 ends with one open item, spike (e)'s full test, which needs a probe route built in `homechat-bot` under its rules. The six phase 1 decisions are tabled in the results doc.
 - Terminal kept Full Disk Access and Automation only for the spikes; Alex revokes both now (plan Task 11 Step 4).
+
+## 2026-11-08 17:40 ET: phase 1 Mac plan drafted
+- `docs/superpowers/plans/2026-11-08-phase1-mac-read-and-uplink.md`, 10 tasks: contract, models, decoder, reader, scrubber, config/token/client, service, Contacts names, status section, acceptance runbook. No sending.
+- `NSUnarchiver` raises Objective-C exceptions on corrupt input and the project has no Objective-C to catch them, so a structural pre-check (the spike's scanner rules) gates every call. The residual risk is a structurally valid but internally corrupt blob.
+- Contract deviations from the spec's sketch: attachments are a count, not names; verification-code and short-code messages go up as `kind: skipped` with no text, so codes never leave the Mac.
+- HomeChat's half starts in `homechat-bot` (4b is live, pre-approved 2026-11-07) against the contract, under that repo's rules.
+- Hygiene slip, caught before merge: the first plan commit (PR #10, closed unmerged) wrote a private domain name into a grep pattern. The plan was rebuilt on a fresh branch (PR #11) so `main`'s history never holds it. Scans now look for `https?://` instead of naming the domain. The old branch and PR #10 still hold that commit on GitHub; deleting the branch is Alex's call.
