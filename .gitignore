@@ -29,3 +29,11 @@ output/app-icons/*
 # Machine-specific permission-test configuration and raw proof stay private.
 permission-testing.local.json
 .permission-test-receipts/
+
+# msgblast-imessage fork: local Claude Code and tool files
+.claude/settings.local.json
+CLAUDE.local.md
+.claude/worktrees/
+.superpowers/
+.local/
+.remember/
