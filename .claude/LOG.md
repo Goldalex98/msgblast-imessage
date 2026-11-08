@@ -79,3 +79,12 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Two runs stopped at the `SEND` prompt before c1 (not typed exactly); the counter proved nothing was submitted, so retrying was safe.
 - c2 ran before the frontmost fix, so its focus reading is lost; the verdict rests on c1, c3 and c4. c3 is the strongest case: Messages wasn't running, the send launched it, and Terminal stayed in front.
 - 3 of the 6 phase 0 sends are used; the rest stay unused unless a later spike needs them.
+
+## 2026-11-08 16:30 ET: spike (e) preliminary
+- Probed the bot hostname, not the connector hostname: the connector only admits Anthropic by design, and the Mac's uplink would go to the bot. The hostname lives only in the git-ignored local config; it's named in `homechat-bot`'s own docs, not here.
+- A 404 through Cloudflare with no Access redirect means the edge isn't the obstacle; the route is. That points the uplink at a token-authenticated Caddy route rather than an Access service token, pending a real POST.
+
+## 2026-11-08 17:30 ET: spike (f asleep), phase 0 spikes done
+- Messages reach the Mac during sleep: background wakes picked each send up within seconds, so the lid doesn't gate sync. The 24 h nudge stays as the spec has it, for an offline Mac; no spec change.
+- Phase 0 ends with one open item, spike (e)'s full test, which needs a probe route built in `homechat-bot` under its rules. The six phase 1 decisions are tabled in the results doc.
+- Terminal kept Full Disk Access and Automation only for the spikes; Alex revokes both now (plan Task 11 Step 4).
