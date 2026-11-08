@@ -1,28 +1,29 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-08 17:30 ET
-**At:** Phase 0 spikes done on the MacBook except spike (e)'s full test; all six phase 1 decisions are in `docs/superpowers/spikes/2026-11-phase0-results.md`.
-**Next:** Alex revokes Terminal's Full Disk Access and Automation; then the phase 1 plan (Mac side), with spike (e)'s full test queued in `homechat-bot`.
-**Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 merged to `main` (PRs #2, #3); Tasks 8–11 done on the MacBook (spike (e) full test waits on `homechat-bot`); phase 1 plan next.
-**Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag · Calendar · Replies · Duet tools
+**Updated:** 2026-11-08 19:00 ET
+**At:** Phase 1 Mac side built on `phase1/mac-read-uplink` (plan Tasks 1–10): reader, decoder, scrubber, uplink client, service and a Settings status section, all tested on the MacBook; the signed app is installed. Final whole-branch review and the fork PR come next.
+**Next:** Final review, one fix pass, fork PR, merge on green CI. Then HomeChat's half in `homechat-bot` (route, token, store) so the Mac acceptance runbook can run.
+**Phase:** Phase 1 Read and flag: Mac side built (not yet merged, not yet run against HomeChat); HomeChat side not started.
+**Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag (now: Mac side built) · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
 
 _The instrument panel: rewrite it in place, only ever describing now, on every state change. Why things are the way they are goes in [LOG.md](LOG.md) (append only). Format and rules: the user-level `flight-deck` skill. This repo is public: no names, numbers, hosts or tokens here._
 
 ## PLAN
-- 0 Spikes — answer the seven unknowns on the MacBook (design §7) — now (probes built, Mac runs next)
-- 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — next
+- 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
+- 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — now (Mac side built; HomeChat side next)
 - 2 Calendar — free or clash for texted dates, add on yes — next
 - 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — next
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
-- Fork CI (`fork-ci.yml`, PR #4): runs on PRs and pushes to `main`. Nothing else runs: no app build, no uplink, no HomeChat routes.
+- Fork CI (`fork-ci.yml`): runs on PRs and pushes to `main`.
+- "msgblast iMessage.app" (build `12d78dc`) on the MacBook ticks the companion every 2 s, but with no address or token saved it reads nothing and sends nothing ("Not set up").
 
 ## QUEUED
-- Phase 1 plan (Mac side): reader and `NSUnarchiver` decoder, scrubber, uplink client, status pane; interface contract first (spec §4.2).
-- `homechat-bot`: a probe route for spike (e)'s full test, under that repo's rules (spec §9).
-- HomeChat's half is built in `homechat-bot`, not here. Spike (e)'s full test needs a probe route there.
+- Final whole-branch review of `phase1/mac-read-uplink`, then the fork PR.
+- `homechat-bot`: `POST /imsg/messages`, per-Mac token issuing and the message store, against `docs/superpowers/specs/2026-11-08-imsg-uplink-contract.md`; then the flagger, update and desk items. Also the probe route for spike (e)'s full test. Under that repo's rules (spec §9).
+- Mac acceptance: `docs/superpowers/runbooks/phase1-mac-acceptance.md`, once HomeChat issues a token.
 
 ## BLOCKED
 - None.
@@ -31,15 +32,18 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
 
 ## AWAITING Alex
-- Revoke Terminal's Full Disk Access and Automation → Messages (Task 11 Step 4), now that the Terminal spikes are done.
-- His re-review of the design.
-- A MacBook session for Tasks 8–11, and a yes typed in chat before Task 10's real sends.
+- Check 0 of the acceptance runbook at the Mac: the Settings section renders, Paused survives a relaunch, Full Disk Access reads Allowed. (Claude was not given computer-use access to the app, so this is unverified.)
+- Revoke Terminal's Full Disk Access and Automation → Messages, now that the Terminal spikes are done (not yet confirmed).
+- Whether to delete the stale branch `plan/phase1-mac` (it holds the commit with the private domain name; PR #10 is closed).
 
 ## DONE
+- 2026-11-08: phase 1 Mac plan Tasks 1–10 on `phase1/mac-read-uplink`: contract, wire models, `attributedBody` decoder, group-aware reader, scrubber, config/Keychain token/uplink client, companion service, Contacts names, Settings section and app wiring, acceptance runbook. Three automated security-review findings fixed test-first (scrubber patterns, actor reentrancy, phone country codes). Rulings in the plan ledger, summarised in LOG.
+- 2026-11-08: phase 0 Tasks 8–11 on the MacBook (PRs #5–#9) and the phase 1 Mac plan (PR #11), all merged with green CI.
 - 2026-11-07: phase 0 Tasks 1–7 on `spikes/phase0` (`ee7c52b..` 8 commits, incl. one final-review fix pass): probe library and synthetic fixture, spikes (a), (b), (c)/(d), (e), (f), (g), and `companion/build_fork_app.py`. Final review: 0 Critical; 4 Important fixed with tests; 5 minors deferred (LOG 22:10).
 - 2026-11-07: forked upstream at `8fd9191` (public, `main` only, Actions disabled); added CLAUDE.md, `.claude/` (settings, agents, STATUS, LOG), FORK.md, `.gitignore` entries and the approved design.
 
 ## EVIDENCE
+- Phase 1 Mac gate on the MacBook (2026-11-08 18:40–18:51 ET, branch at `12d78dc` before the merge from `main`): Python script tests 175 OK, 1 skipped; native tests 941 executed, 1 skipped, 0 failures, TEST SUCCEEDED (was 872; 69 new companion tests, all on synthetic `chat.db` fixtures). Signed build of `12d78dc` passes `codesign` validation and its designated requirement, and is installed in `/Applications`, running. Not proven: the section's rendering, Keychain token round-trip in the signed app, any read of the real `chat.db` by the app, any post to HomeChat.
 - Spike (f asleep) on the MacBook (2026-11-08 16:50–17:10 ET, 20 min, lid closed): 7 sleep gaps; 4 sends, each seen 1.8–5.5 s after sending and 0–12 s after a wake.
 - Spike (e) preliminary on the MacBook (2026-11-08 16:27 ET, `reach.py`): bot hostname root answered 404 through Cloudflare in 169 ms, `access_redirect=false`. Not a real route; the full test needs the `homechat-bot` probe route.
 - Spikes (c), (d) on the MacBook (2026-11-08 13:57–14:06 ET, Alex's typed yes, Terminal.app): c1 1:1 sent once (0.6 s); c2 group sent once (0.5 s, arrival confirmed); c3 group with Messages quit sent once (2.6 s, Messages launched in the background); c4 tampered refused with 9004. Alex confirmed c1–c3 arrived. Terminal frontmost before and after c1, c3, c4; c2's focus reading was lost to the macOS 27 `lsappinfo` bug, fixed in PR #7. 3 of 6 sends used.
@@ -53,12 +57,12 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - Linux gate after the review fixes (2026-11-07 22:10 ET): 174 tests, OK, 2 skipped. Fixture-only: no probe has touched a real `chat.db`, Messages, HomeChat or `codesign`.
 - First fork CI run (2026-11-08 03:17–03:37 UTC, run 42442049686, PR #4 head `24aa5f7`): linux pass (Python tests OK, 2 skipped); native pass on GitHub `xcode-27`, Xcode 27.0 (27A266a): Python tests OK (1 skipped), native core tests 872 executed, 1 skipped, 0 failures, TEST SUCCEEDED. Upstream's six workflows stayed off. This is GitHub's VM, not the MacBook: TCC, signing and the real app are still unproven.
 - Agent live proof (headless `claude -p`, 2026-11-07): `quality-gate` on Haiku 5.5 ran the Linux gate (pass, 2 turns); `send-safety-reviewer` on Sonnet 5.5 reviewed the setup files (pass, no findings, 5 turns). 0 permission denials each. The first runs ignored the project allow rules (folder untrusted); after Alex set the trust flag, `quality-gate` re-ran with no trust warning and 0 denials, so the Linux allow rule matches. The Mac allow rule was proven on 2026-11-08 (see the MacBook gate line).
-- Not proven yet: msgblast on current macOS, the Swift `NSUnarchiver` decoder, sends from the fork app itself (not `osascript`), SMS sends, overnight sleep and Low Power Mode sync, the Mac reaching HomeChat through Cloudflare, the Sparkle and telemetry blanks at runtime.
+- Not proven yet: msgblast on current macOS beyond tests, the `NSUnarchiver` decoder on real blobs (proven only on `NSArchiver` output), sends from the fork app itself (not `osascript`), SMS sends, overnight sleep and Low Power Mode sync, the Mac reaching HomeChat through Cloudflare, the Sparkle and telemetry blanks at runtime.
 
 ## STANDING RULES
 - `CLAUDE.md` holds them (fork PRs merge on green CI without asking, since 2026-11-08): never write the Messages database; no send without Alex's exact-text approval; uncertain sends never retried; no personal data in this public repo; nothing aimed at upstream without Alex's yes.
 
 ## WHERE THINGS ARE
-- Design: `docs/superpowers/specs/2026-11-07-imessage-companion-design.md`. Build plan (when written): `docs/superpowers/plans/`.
+- Design: `docs/superpowers/specs/2026-11-07-imessage-companion-design.md`. Plans: `docs/superpowers/plans/` (phase 1 Mac: `2026-11-08-phase1-mac-read-and-uplink.md`). Uplink contract: `docs/superpowers/specs/2026-11-08-imsg-uplink-contract.md`. Acceptance: `docs/superpowers/runbooks/`.
 - Remotes: `origin` is the fork; `upstream` is `mgalpert/msgblast`, fetch-only. Fork base: `8fd9191`.
 - What changed versus upstream: `FORK.md`.
