@@ -1,0 +1,49 @@
+# Fork-only CI for Goldalex98/msgblast-imessage. Upstream's workflows stay disabled in this fork
+# (each one is switched off by name); this file is the fork's own and is not sent upstream.
+# No secrets, no signing, no artifacts uploaded: it only runs the gates in .claude/agents/quality-gate.md.
+name: Fork CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    if: github.repository == 'Goldalex98/msgblast-imessage'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Python script tests (Linux gate)
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+
+  native:
+    if: github.repository == 'Goldalex98/msgblast-imessage'
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Show selected Xcode
+        run: xcodebuild -version
+      - name: Python script tests on macOS
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
+      - name: Native core tests (docs/testing.md)
+        run: xcodebuild -project msgblast.xcodeproj -scheme msgblast -configuration Debug -derivedDataPath build/contributor-tests -destination 'platform=macOS,arch=arm64' MSGBLAST_APP_BUNDLE_IDENTIFIER=com.msgblast.contributor-tests ASSETCATALOG_COMPILER_APPICON_NAME=AppIconDemo -only-testing:msgblastTests test

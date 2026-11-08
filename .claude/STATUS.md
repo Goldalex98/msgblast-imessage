@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-07 22:15 ET
+**Updated:** 2026-11-07 22:25 ET
 **At:** The test probes and the fork app builder are merged; they pass on the Linux box but haven't run on the Mac.
 **Next:** On the MacBook with you: clone, build the fork app, then run the probes and the few test sends.
 **Phase:** Phase 0 spikes: plan approved (PR on `plan/phase0-spikes`), Tasks 1–7 merged to `main` (PRs #2, #3); Tasks 8–11 need the MacBook.
@@ -17,7 +17,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
-- Nothing runs yet: no app build, no uplink, no HomeChat routes.
+- Fork CI (`fork-ci.yml`) being added on `ci/fork-ci`: Linux gate + native core tests on GitHub's `xcode-27` runner. Nothing else runs: no app build, no uplink, no HomeChat routes.
 
 ## QUEUED
 - MacBook, Tasks 8–11: clone the fork, check macOS, Xcode 27 and Apple silicon, then make the self-signed signing certificate. Alex then runs the probes and the real sends (only with his yes), and Claude reads only the counts-only reports.

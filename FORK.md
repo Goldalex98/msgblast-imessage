@@ -16,6 +16,9 @@ fork-only features here, not upstream.
   "msgblast iMessage.app" (its own bundle ID and support folder, updates and telemetry off) by
   reusing upstream's preview builder unchanged, and `companion/spikes/` holds the phase 0 probes,
   which print counts only. Their tests are `scripts/tests/test_companion_*.py`.
+- **Since 2026-11-07:** `.github/workflows/fork-ci.yml` is the fork's own CI (Python tests on
+  Linux and macOS, plus the native core tests). Upstream's workflows are kept but switched off in
+  this fork's Actions settings.
 - **Planned** (see the design): an iMessage companion that reads Messages threads read-only,
   flags messages waiting on a reply, sends them to the owner's own home server, and sends a reply
   only after the owner approves its exact text. Builds of this fork will use their own bundle ID,
