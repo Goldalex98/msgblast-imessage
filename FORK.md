@@ -33,8 +33,9 @@ Known limits of the companion:
 - Message bodies stored only as `attributedBody` are decoded with `NSUnarchiver` after a
   structural check (header, class names, a string length that fits). `NSUnarchiver` raises an
   Objective-C exception on corrupt input that Swift can't catch, so a blob that passes the check
-  but is still corrupt would crash the app. The check is there to make that unlikely, not
-  impossible.
+  but is still corrupt would crash the app. The check makes that unlikely, and the reader records
+  the row it is decoding first, so after such a crash that row is treated as unreadable and the
+  next launch carries on (one crash, not a crash loop).
 - Edits, unsends and delivery changes rewrite existing rows and aren't uplinked.
 
 New code goes in separate files where possible. Upstream files this fork changes are listed here

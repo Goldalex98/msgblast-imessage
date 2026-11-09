@@ -131,8 +131,11 @@ final class CompanionServiceTests: XCTestCase {
         let s = service(f.url.path)
         _ = await s.tick()
         XCTAssertEqual(uplink.batches.count, 1)
-        try f.addMessage(chats: [], text: "orphan", handle: alice)
-        try f.addMessage(chats: [], text: "orphan", handle: alice)
+        try f.addMessage(chats: [], text: "orphan", date: clock.now, handle: alice)
+        try f.addMessage(chats: [], text: "orphan", date: clock.now, handle: alice)
+        _ = await s.tick()
+        XCTAssertEqual(savedCursor, 2, "fresh chat-less rows hold the cursor; Messages may still link them")
+        clock.advance(11)
         _ = await s.tick()
         XCTAssertEqual(uplink.batches.count, 1)
         XCTAssertEqual(savedCursor, 4)
@@ -151,6 +154,24 @@ final class CompanionServiceTests: XCTestCase {
         XCTAssertEqual(cursors, [200, 400, 450])
         _ = await s.tick()
         XCTAssertEqual(uplink.batches.count, 3, "caught up and nothing changed")
+    }
+
+    func test_oversizedBatchIsSplitUnderTheBodyLimit() async throws {
+        try configure(cursor: 0)
+        let f = try CompanionFixture()
+        let chat = try directChat(f)
+        let long = String(repeating: "👋", count: 4000)  // 16 KB of UTF-8 each; 200 of them is over 3 MB
+        for _ in 0..<200 { try f.addMessage(chats: [chat], text: long, date: clock.now - 60, handle: alice) }
+        let s = service(f.url.path)
+        for _ in 0..<20 where savedCursor != 200 { _ = await s.tick() }
+        XCTAssertEqual(savedCursor, 200)
+        XCTAssertGreaterThan(uplink.batches.count, 1)
+        for batch in uplink.batches {
+            XCTAssertLessThanOrEqual(try CompanionJSON.encoder.encode(batch).count, 1_000_000)
+            XCTAssertEqual(batch.cursor, batch.messages.last?.rowid, "a cut batch's cursor ends at its last message")
+            XCTAssertEqual(Set(batch.threads.map(\.guid)), Set(batch.messages.map(\.threadGUID)))
+        }
+        XCTAssertEqual(uplink.batches.flatMap { $0.messages.map(\.rowid) }, Array(1...200))
     }
 
     func test_ssnInAttributedBodyOnlyIsScrubbed() async throws {

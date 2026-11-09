@@ -34,7 +34,14 @@ public final class CompanionReader {
         "message_attachment_join": ["message_id", "attachment_id"],
     ]
 
-    public init(path: String) throws(CompanionReaderError) {
+    /// NSUnarchiver can raise an uncatchable exception on a corrupt blob. The row being decoded is written here
+    /// first; if the app dies mid-decode, the next read finds it and treats that row as unreadable for good
+    /// (kept in a "-poisoned" file beside it), so one bad row can't crash every launch.
+    private let decodeMarker: URL?
+    private var poisonedFile: URL? { decodeMarker.map { $0.appendingPathExtension("poisoned") } }
+
+    public init(path: String, decodeMarker: URL? = nil) throws(CompanionReaderError) {
+        self.decodeMarker = decodeMarker
         var handle: OpaquePointer?
         let result = sqlite3_open_v2(path, &handle, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nil)
         guard result == SQLITE_OK, let handle else {
@@ -80,7 +87,11 @@ public final class CompanionReader {
         return value
     }
 
-    public func rows(after rowID: Int64, limit: Int) throws(CompanionReaderError) -> CompanionReadResult {
+    /// `holdOrphansAfter`: a row in no chat dated at or after this stops the scan before it, since Messages may
+    /// not have linked it to its chat yet. Older chat-less rows are passed over.
+    public func rows(after rowID: Int64, limit: Int, holdOrphansAfter: Date? = nil) throws(CompanionReaderError) -> CompanionReadResult {
+        let poisoned = loadPoisoned()
+        defer { if let decodeMarker { try? FileManager.default.removeItem(at: decodeMarker) } }
         // One row per message; a message joined to several chats goes under the lowest chat ROWID.
         let sql = """
         SELECT m.ROWID, m.guid, m.text, m.attributedBody, m.date, m.is_from_me, h.id, m.associated_message_type,
@@ -93,19 +104,25 @@ public final class CompanionReader {
         """
         var messages: [CompanionMessage] = []
         var last = rowID
+        var held = false
         try each(sql, [.int(rowID), .int(Int64(max(limit, 0)))]) { s in
+            guard !held else { return }
             let rowid = sqlite3_column_int64(s, 0)
+            let raw = Double(sqlite3_column_int64(s, 4))
+            let sentAt = Date(timeIntervalSinceReferenceDate: raw > 1e12 ? raw / 1e9 : raw)
+            guard let thread = Self.text(s, 11), let guid = Self.text(s, 1) else {  // no chat, no thread
+                if let holdOrphansAfter, sentAt >= holdOrphansAfter { held = true } else { last = rowid }
+                return
+            }
             last = rowid
-            guard let thread = Self.text(s, 11), let guid = Self.text(s, 1) else { return }  // no chat, no thread
             let fromMe = sqlite3_column_int64(s, 5) != 0
             let associated = sqlite3_column_int64(s, 7)
             let attachments = max(Int(sqlite3_column_int64(s, 10)), sqlite3_column_int64(s, 9) != 0 ? 1 : 0)
-            let raw = Double(sqlite3_column_int64(s, 4))
             var kind = CompanionMessage.Kind.text
             var body: String?
             if (2000...3999).contains(associated) {
                 kind = .reaction
-            } else if let text = Self.clean(Self.text(s, 2)) ?? Self.clean(AttributedBodyDecoder.text(from: Self.blob(s, 3))) {
+            } else if let text = Self.clean(Self.text(s, 2)) ?? Self.clean(decode(Self.blob(s, 3), rowid: rowid, poisoned: poisoned)) {
                 body = text
             } else {
                 kind = attachments > 0 ? .attachmentOnly : .unreadable
@@ -113,7 +130,7 @@ public final class CompanionReader {
             messages.append(CompanionMessage(
                 guid: guid, rowid: rowid, threadGUID: thread, fromMe: fromMe,
                 senderHandle: fromMe ? nil : Self.text(s, 6).flatMap { $0.isEmpty ? nil : $0 },
-                sentAt: Date(timeIntervalSinceReferenceDate: raw > 1e12 ? raw / 1e9 : raw),
+                sentAt: sentAt,
                 kind: kind, text: body,
                 replyToGUID: Self.text(s, 8).flatMap { $0.isEmpty ? nil : $0 },
                 attachmentCount: attachments))
@@ -151,6 +168,27 @@ public final class CompanionReader {
                 participantsFingerprint: CompanionFingerprint.of(handles: handles)))
         }
         return threads
+    }
+
+    // MARK: - Crash-safe decoding
+
+    private func decode(_ blob: Data?, rowid: Int64, poisoned: Set<Int64>) -> String? {
+        guard let blob, !poisoned.contains(rowid) else { return nil }
+        if let decodeMarker { try? Data(String(rowid).utf8).write(to: decodeMarker) }
+        return AttributedBodyDecoder.text(from: blob)
+    }
+
+    /// Moves a marker left by a crash into the poisoned list, then returns that list.
+    private func loadPoisoned() -> Set<Int64> {
+        guard let decodeMarker, let poisonedFile else { return [] }
+        let existing = (try? String(contentsOf: poisonedFile, encoding: .utf8)) ?? ""
+        var rows = Set(existing.split(whereSeparator: \.isNewline).compactMap { Int64($0) })
+        if let crashed = (try? String(contentsOf: decodeMarker, encoding: .utf8)).flatMap({ Int64($0) }),
+           rows.insert(crashed).inserted {
+            try? Data(rows.sorted().map(String.init).joined(separator: "\n").utf8).write(to: poisonedFile, options: .atomic)
+        }
+        try? FileManager.default.removeItem(at: decodeMarker)
+        return rows
     }
 
     // MARK: - SQLite

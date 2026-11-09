@@ -90,6 +90,44 @@ final class CompanionReaderTests: XCTestCase {
         XCTAssertEqual(message.attachmentCount, 1)
     }
 
+    func test_recentOrphanHoldsTheScan() throws {
+        // Messages may write a row before its chat link; don't pass a fresh chat-less row for good.
+        let f = try CompanionFixture()
+        let chat = try f.addChat(guid: "iMessage;-;direct", style: 45, displayName: nil, handles: [alice])
+        let now = Date()
+        try f.addMessage(chats: [chat], text: "a", date: now - 60, handle: alice)
+        try f.addMessage(chats: [], text: "fresh", date: now, handle: alice)
+        try f.addMessage(chats: [chat], text: "b", date: now, handle: alice)
+        let held = try reader(f).rows(after: 0, limit: 10, holdOrphansAfter: now - 10)
+        XCTAssertEqual(held.messages.map(\.rowid), [1])
+        XCTAssertEqual(held.lastScannedRowID, 1)
+        let passed = try reader(f).rows(after: 0, limit: 10, holdOrphansAfter: now + 1)
+        XCTAssertEqual(passed.messages.map(\.rowid), [1, 3], "an orphan dated before the hold point is passed over")
+        XCTAssertEqual(passed.lastScannedRowID, 3)
+        let none = try reader(f).rows(after: 0, limit: 10)
+        XCTAssertEqual(none.messages.map(\.rowid), [1, 3])
+        XCTAssertEqual(none.lastScannedRowID, 3)
+    }
+
+    func test_crashDuringDecodePoisonsOnlyThatRow() throws {
+        let f = try CompanionFixture()
+        let chat = try f.addChat(guid: "iMessage;-;direct", style: 45, displayName: nil, handles: [alice])
+        try f.addMessage(chats: [chat], attributedBody: AttributedBodyDecoderTests.archived("one"), handle: alice)
+        try f.addMessage(chats: [chat], attributedBody: AttributedBodyDecoderTests.archived("two"), handle: alice)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("decode-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let marker = folder.appendingPathComponent("companion-decoding")
+        try Data("2".utf8).write(to: marker)  // as left by a crash while decoding row 2
+        let r = try CompanionReader(path: f.url.path, decodeMarker: marker)
+        let first = try r.rows(after: 0, limit: 10).messages
+        XCTAssertEqual(first.map(\.kind), [.text, .unreadable])
+        XCTAssertEqual(first[0].text, "one")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path), "the marker is cleared after a clean read")
+        let replay = try CompanionReader(path: f.url.path, decodeMarker: marker).rows(after: 0, limit: 10).messages
+        XCTAssertEqual(replay.map(\.kind), [.text, .unreadable], "the poisoned row stays poisoned on replay")
+    }
+
     func test_reactionsAreKindReactionWithoutText() throws {
         let f = try CompanionFixture()
         let chat = try f.addChat(guid: "iMessage;-;direct", style: 45, displayName: nil, handles: [alice])

@@ -37,6 +37,10 @@ public actor CompanionService {
     public static let firstRunWindow: TimeInterval = 3 * 86_400
     static let initialBackoff: TimeInterval = 5
     static let maxBackoff: TimeInterval = 300
+    /// The contract's limit is 1 MB; stay under it with room for headers and rounding.
+    static let maxBodyBytes = 900_000
+    /// A chat-less row this new may just not be linked to its chat yet.
+    static let orphanHold: TimeInterval = 10
 
     private let databasePath: String
     private let configURL: URL
@@ -118,7 +122,7 @@ public actor CompanionService {
                 }
                 firstRunCursor = start
             }
-            read = try reader.rows(after: start, limit: Self.batchLimit)
+            read = try reader.rows(after: start, limit: Self.batchLimit, holdOrphansAfter: now() - Self.orphanHold)
             threads = try reader.threads(guids: Set(read.messages.map(\.threadGUID)))
         } catch {
             return databaseFailure(error, config: config)
@@ -137,8 +141,9 @@ public actor CompanionService {
             thread.participants = thread.participants.map { CompanionParticipant(handle: $0.handle, name: known[$0.handle]) }
             return thread
         }
-        let batch = UplinkBatch(deviceID: config.deviceID, batchID: UUID(), cursor: read.lastScannedRowID,
-                                firstRun: firstRun, threads: named, messages: read.messages.map(CompanionScrubber.apply))
+        let batch = Self.fitted(UplinkBatch(deviceID: config.deviceID, batchID: UUID(), cursor: read.lastScannedRowID,
+                                            firstRun: firstRun, threads: named,
+                                            messages: read.messages.map(CompanionScrubber.apply)))
         status.state = .uplinking
 
         do throws(UplinkError) {
@@ -171,9 +176,24 @@ public actor CompanionService {
 
     // MARK: - Helpers
 
+    /// Halves the batch until its JSON fits under `maxBodyBytes`, ending the cursor at the last kept message and
+    /// keeping only the threads those messages use. One message (text ≤ 4000 code points) always fits.
+    static func fitted(_ batch: UplinkBatch) -> UplinkBatch {
+        var batch = batch
+        while batch.messages.count > 1, let size = try? CompanionJSON.encoder.encode(batch).count, size > maxBodyBytes {
+            batch.messages = Array(batch.messages.prefix(batch.messages.count / 2))
+            batch.cursor = batch.messages[batch.messages.count - 1].rowid
+            let used = Set(batch.messages.map(\.threadGUID))
+            batch.threads = batch.threads.filter { used.contains($0.guid) }
+        }
+        return batch
+    }
+
     private func openReader() throws(CompanionReaderError) -> CompanionReader {
         if let reader { return reader }
-        let opened = try CompanionReader(path: databasePath)
+        let opened = try CompanionReader(
+            path: databasePath,
+            decodeMarker: configURL.deletingLastPathComponent().appendingPathComponent("companion-decoding"))
         reader = opened
         lastDataVersion = nil
         return opened
