@@ -1,10 +1,10 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-08 19:00 ET
-**At:** Phase 1 Mac side built on `phase1/mac-read-uplink` (plan Tasks 1–10): reader, decoder, scrubber, uplink client, service and a Settings status section, all tested on the MacBook; the signed app is installed. Final whole-branch review and the fork PR come next.
-**Next:** Final review, one fix pass, fork PR, merge on green CI. Then HomeChat's half in `homechat-bot` (route, token, store) so the Mac acceptance runbook can run.
-**Phase:** Phase 1 Read and flag: Mac side built (not yet merged, not yet run against HomeChat); HomeChat side not started.
-**Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag (now: Mac side built) · Calendar · Replies · Duet tools
+**Updated:** 2026-11-08 20:10 ET
+**At:** Phase 1 Mac side merged (PR #12, `main` `5fa56be`, CI green); acceptance check 0 passed at the Mac. Checks 1–8 wait on HomeChat's half.
+**Next:** HomeChat's half in `homechat-bot` (route, token issuing, store), then the rest of the Mac acceptance runbook.
+**Phase:** Phase 1 Read and flag: Mac side merged (not yet run against HomeChat); HomeChat side not started.
+**Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag (now: Mac side merged) · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
 
 _The instrument panel: rewrite it in place, only ever describing now, on every state change. Why things are the way they are goes in [LOG.md](LOG.md) (append only). Format and rules: the user-level `flight-deck` skill. This repo is public: no names, numbers, hosts or tokens here._
@@ -18,10 +18,9 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 
 ## RUNNING NOW
 - Fork CI (`fork-ci.yml`): runs on PRs and pushes to `main`.
-- "msgblast iMessage.app" (build `12d78dc`) on the MacBook ticks the companion every 2 s, but with no address or token saved it reads nothing and sends nothing ("Not set up").
+- "msgblast iMessage.app" (build `12d78dc`; `main` has review fixes since, not yet rebuilt) on the MacBook ticks the companion every 2 s, but with no address or token saved it reads nothing and sends nothing ("Not set up").
 
 ## QUEUED
-- Final whole-branch review of `phase1/mac-read-uplink`, then the fork PR.
 - `homechat-bot`: `POST /imsg/messages`, per-Mac token issuing and the message store, against `docs/superpowers/specs/2026-11-08-imsg-uplink-contract.md`; then the flagger, update and desk items. Also the probe route for spike (e)'s full test. Under that repo's rules (spec §9).
 - Mac acceptance: `docs/superpowers/runbooks/phase1-mac-acceptance.md`, once HomeChat issues a token.
 
@@ -32,7 +31,6 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
 
 ## AWAITING Alex
-- Check 0 of the acceptance runbook at the Mac: the Settings section renders, Paused survives a relaunch, Full Disk Access reads Allowed. (Claude was not given computer-use access to the app, so this is unverified.)
 - Revoke Terminal's Full Disk Access and Automation → Messages, now that the Terminal spikes are done (not yet confirmed).
 - Whether to delete the stale branch `plan/phase1-mac` (it holds the commit with the private domain name; PR #10 is closed).
 
@@ -43,7 +41,9 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 2026-11-07: forked upstream at `8fd9191` (public, `main` only, Actions disabled); added CLAUDE.md, `.claude/` (settings, agents, STATUS, LOG), FORK.md, `.gitignore` entries and the approved design.
 
 ## EVIDENCE
-- Phase 1 Mac gate on the MacBook (2026-11-08 18:40–18:51 ET, branch at `12d78dc` before the merge from `main`): Python script tests 175 OK, 1 skipped; native tests 941 executed, 1 skipped, 0 failures, TEST SUCCEEDED (was 872; 69 new companion tests, all on synthetic `chat.db` fixtures). Signed build of `12d78dc` passes `codesign` validation and its designated requirement, and is installed in `/Applications`, running. Not proven: the section's rendering, Keychain token round-trip in the signed app, any read of the real `chat.db` by the app, any post to HomeChat.
+- Acceptance check 0 at the Mac (2026-11-08 20:04–20:06 ET, build `12d78dc`, read by Alex): the companion section shows in Settings ("No uplink yet this session"); Paused stayed on across a quit and relaunch (companion.json saved mode 0600, app restarted 20:04:39); Full Disk Access reads Allowed. The status line's exact words weren't reported. The build predates the review fixes in `5fa56be`.
+- PR #12 merged 2026-11-08 (`5fa56be`): PR run 42539220785 and `main` run 42541211665 both green (linux and native on GitHub's `xcode-27`). The Mac gate at `c498bcd` was 944 native tests, 0 failures, and Python 175 OK.
+- Phase 1 Mac gate on the MacBook (2026-11-08 18:40–18:51 ET, `12d78dc`): Python script tests 175 OK, 1 skipped; native tests 941 executed, 1 skipped, 0 failures, TEST SUCCEEDED (was 872; 69 new companion tests, all on synthetic `chat.db` fixtures). Signed build of `12d78dc` passes `codesign` validation and its designated requirement, and is installed in `/Applications`, running. Not proven: Keychain token round-trip in the signed app, any read of the real `chat.db` by the app, any post to HomeChat.
 - Spike (f asleep) on the MacBook (2026-11-08 16:50–17:10 ET, 20 min, lid closed): 7 sleep gaps; 4 sends, each seen 1.8–5.5 s after sending and 0–12 s after a wake.
 - Spike (e) preliminary on the MacBook (2026-11-08 16:27 ET, `reach.py`): bot hostname root answered 404 through Cloudflare in 169 ms, `access_redirect=false`. Not a real route; the full test needs the `homechat-bot` probe route.
 - Spikes (c), (d) on the MacBook (2026-11-08 13:57–14:06 ET, Alex's typed yes, Terminal.app): c1 1:1 sent once (0.6 s); c2 group sent once (0.5 s, arrival confirmed); c3 group with Messages quit sent once (2.6 s, Messages launched in the background); c4 tampered refused with 9004. Alex confirmed c1–c3 arrived. Terminal frontmost before and after c1, c3, c4; c2's focus reading was lost to the macOS 27 `lsappinfo` bug, fixed in PR #7. 3 of 6 sends used.
