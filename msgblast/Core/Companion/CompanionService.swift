@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 // iMessage companion (fork-only). One read-and-uplink cycle per tick(); the caller owns the timer.
@@ -85,7 +86,8 @@ public actor CompanionService {
         var config = CompanionConfig.load(from: configURL)
         if config.paused { closeReader(); return update(.paused, config: config) }
         guard let url = config.uplinkURL, let token = tokens.read() else { return update(.notConfigured, config: config) }
-        let key = "\(url.absoluteString)\n\(token)"
+        // A digest, so the stop record never holds the token itself.
+        let key = SHA256.hash(data: Data("\(url.absoluteString)\n\(token)".utf8)).map { String(format: "%02x", $0) }.joined()
         if let stop {
             if stop.key == key { return update(.stopped(stop.reason), config: config) }
             self.stop = nil
