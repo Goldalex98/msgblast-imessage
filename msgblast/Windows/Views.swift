@@ -726,8 +726,14 @@ struct AppSettingsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var updater: AppUpdater
     @ObservedObject var shortcut: NewBlastShortcut
+    var companion: CompanionController? = nil  // fork: iMessage companion
     var body: some View {
         Form {
+            if let companion {  // fork: iMessage companion
+                Section("iMessage companion") {
+                    CompanionStatusView(controller: companion, permissions: model.onboarding.messagesPermissions)
+                }
+            }
             Section("Quick Access") { NewBlastShortcutSettings(shortcut: shortcut) }
             Section("Permissions") {
                 PermissionsSettingsView(model: model)

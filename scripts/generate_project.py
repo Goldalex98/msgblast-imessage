@@ -47,6 +47,7 @@ targets = {}
 for name in products:
     own = [p for p in files if (p.startswith('msgblast/Core/') if name == 'msgblastCore' else p.startswith('msgblastTests/') if name == 'msgblastTests' else p.startswith('msgblastUITests/') if name == 'msgblastUITests' else p.startswith('msgblast/') and not p.startswith('msgblast/Core/'))]
     if name == 'msgblastTests': own.append('msgblast/Permissions/MessagesAccessGuide.swift')
+    if name == 'msgblastTests': own.append('msgblast/Companion/ContactNameResolver.swift')  # fork: companion
     builds = [obj(name+p+'build', '{isa = PBXBuildFile; fileRef = '+files[p]+';}') for p in own]
     sources = obj(name+'sources', '{isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = '+seq(builds)+'; runOnlyForDeploymentPostprocessing = 0;}')
     framework_builds = []
