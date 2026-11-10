@@ -107,3 +107,10 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 ## 2026-11-08 20:10 ET: phase 1 Mac side merged; acceptance check 0 passed
 - PR #12 merged as `5fa56be` after a green PR run and a green `main` run. The final review (send-safety-reviewer on Sonnet, per the model rules) found 0 Critical and 2 Important. Both were fixed test-first: a corrupt `attributedBody` could crash every launch (a decode marker now poisons only that row), and a long-text backlog went over the 1 MB body limit (batches now halve to fit). A promoted Minor was also fixed: fresh chat-less rows hold the cursor for 10 s. The deferred minors are in the PR description.
 - Alex ran check 0 himself, since computer-use access was declined. The section shows, Paused survives a relaunch, and Full Disk Access is Allowed. The installed build (`12d78dc`) predates the review fixes; rebuild before checks 1–8.
+
+## 2026-11-09 21:30 ET: uplink live end to end; acceptance checks 1–4 passed
+- HomeChat's uplink (PR A in `homechat-bot`) was deployed from the EliteBook, with only the uplink switch on; the flagger and desk stay off. The Mac's token was issued from the Mac's Terminal straight to the clipboard, so it never appeared on screen or in a session.
+- Rebuilt the app from `main` (`2bcc8ad`, with the PR #12 review fixes) and installed it after quitting the old copy; the old copy is kept outside the repo for rollback.
+- Checks 1–4 passed against counts-only, read-only readbacks of HomeChat's store. Alex chose to move on before checks 5–8, so restart catch-up, offline retry and the scrubber on real data stay unproven at runtime (unit tests cover them on synthetic data).
+- The token didn't save on the first tries: Save with an empty token field keeps "no token" without an error, which hid what went wrong. Queued as a small app fix.
+- Next is HomeChat's flagger (PR B), from the EliteBook.
