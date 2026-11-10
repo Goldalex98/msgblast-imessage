@@ -1,9 +1,9 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-09 21:30 ET
+**Updated:** 2026-11-10 15:05 ET
 **At:** The Mac uplinks to the live HomeChat (build `2bcc8ad`); acceptance checks 1–4 passed at the Mac; checks 5–8 not run (Alex chose to move on).
-**Next:** HomeChat PR B (flagger, spend kind, auto-clear) in `homechat-bot`, run from the EliteBook under that repo's rules.
-**Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); flagger, update and desk items not built.
+**Next:** HomeChat PR C (twice-daily update, date nudge, replies), open in `homechat-bot` and run from the EliteBook under that repo's rules; this repo waits on it.
+**Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger live (PR B); update (PR C) in review; desk items (PR D) not built.
 **Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag (now: uplink live) · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
 
@@ -11,7 +11,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 
 ## PLAN
 - 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
-- 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — now (uplink live; HomeChat flagger, update and desk next)
+- 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — now (uplink and flagger live; update in review; desk next)
 - 2 Calendar — free or clash for texted dates, add on yes — next
 - 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — next
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
@@ -21,8 +21,8 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - "msgblast iMessage.app" (build `2bcc8ad`, installed 2026-11-09 19:44 ET; the previous copy is kept outside the repo for rollback) on the MacBook, address and token saved, uplinking new messages to HomeChat within seconds.
 
 ## QUEUED
-- `homechat-bot` PRs B (flagger), C (twice-daily update and replies), D (`txt-` desk items), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
-- Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip): not run; pick up when convenient.
+- `homechat-bot` PR C (twice-daily update and replies, open as homechat-bot#231) and PR D (`txt-` desk items, not started), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
+- Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip): not run; worth running now the flagger is live, so the same test texts can also check flags and auto-clear.
 - Small app fix: Save with an empty token field silently keeps "no token" and shows no error; it should say a token is still needed.
 
 ## BLOCKED
@@ -35,6 +35,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - None. Terminal keeps Full Disk Access and Automation → Messages for now, by Alex's choice (2026-11-09), in case a Terminal step is needed again.
 
 ## DONE
+- 2026-11-10: HomeChat PR B (flagger, scrubber, auto-clear, per-kind spend) merged in `homechat-bot` (homechat-bot#227) and recorded there as live (homechat-bot#228). Not checked from this repo: a flag raised by a real text, seen on Alex's phone, or cleared by his reply.
 - 2026-11-09: stale branch `plan/phase1-mac` deleted by Alex (local and GitHub). Its commit with the private domain name stays reachable through closed PR #10 on GitHub.
 - 2026-11-08: phase 1 Mac plan Tasks 1–10 on `phase1/mac-read-uplink`: contract, wire models, `attributedBody` decoder, group-aware reader, scrubber, config/Keychain token/uplink client, companion service, Contacts names, Settings section and app wiring, acceptance runbook. Three automated security-review findings fixed test-first (scrubber patterns, actor reentrancy, phone country codes). Rulings in the plan ledger, summarised in LOG.
 - 2026-11-08: phase 0 Tasks 8–11 on the MacBook (PRs #5–#9) and the phase 1 Mac plan (PR #11), all merged with green CI.
