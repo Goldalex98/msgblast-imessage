@@ -126,3 +126,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - What it does: `scripts/ci_native_scope.py` decides the scope per PR. The full suite now runs with `-parallel-testing-enabled`.
 - One green parallel trial (12m43s): flakiness isn't ruled out yet. If a full-suite run fails in a way that doesn't repeat, take parallel out and keep the scoping.
 - Alex approved the new gate rule (CLAUDE.md): a red full-suite run on `main` after a merge stops further merges until it's fixed forward.
+
+## 2026-11-10 22:15 ET: reader hardening installed; checks 5–8 deferred
+- The pre-install checks came back clean: the real `message` table uses AUTOINCREMENT, so the reset stop can't fire when the newest messages are deleted. No row with a non-zero `item_type` has a body, so the system-row skip can't drop an ordinary message.
+- The first query attempt failed with "authorization denied": it ran from a shell without Full Disk Access, not Terminal.app. Nothing was read.
+- Built with `companion/build_fork_app.py` into its own folder and checked that the designated requirement matched before installing, so the grants carried over. The old copy was moved aside, not deleted.
+- Alex chose not to run checks 5–8 tonight (no test contact free). They stay recorded as not run, not as passed.
