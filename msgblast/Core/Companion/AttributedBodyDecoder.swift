@@ -4,13 +4,17 @@ import Foundation
 public enum AttributedBodyDecoder {
     /// The message text, or nil when the blob is missing, malformed or not an attributed string.
     public static func text(from blob: Data?) -> String? {
-        guard let blob, isWellFormed(blob) else { return nil }
+        // The size cap comes first, before any structural scan or unarchiver call.
+        guard let blob, blob.count <= maxBlobBytes, isWellFormed(blob) else { return nil }
         // NSUnarchiver raises an Objective-C exception on corrupt input, which Swift can't catch and which
         // would crash the app, so only blobs that pass the structural gate above ever reach it. The gate
         // mirrors the byte scanner in companion/spikes/bodies.py, which stays as the fixture oracle.
         guard let object = NSUnarchiver.unarchiveObject(with: blob) else { return nil }
         return (object as? NSAttributedString)?.string
     }
+
+    /// A blob over this is not decoded at all (the message reads as unreadable or attachment-only).
+    static let maxBlobBytes = 4 * 1024 * 1024
 
     private static let header = Data([0x0b]) + Data("streamtyped".utf8)
 

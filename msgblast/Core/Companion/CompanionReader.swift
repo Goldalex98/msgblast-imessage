@@ -21,12 +21,28 @@ public enum CompanionReaderError: Error, Equatable {
     case query(String)
 }
 
+/// Which file a path pointed at when the reader opened it: device and inode from `stat`.
+public struct CompanionFileIdentity: Sendable, Equatable {
+    public let device: Int64
+    public let inode: UInt64
+
+    /// nil when the path can't be stat'ed (missing file, no permission).
+    public static func of(path: String) -> CompanionFileIdentity? {
+        var info = stat()
+        guard stat(path, &info) == 0 else { return nil }
+        return CompanionFileIdentity(device: Int64(info.st_dev), inode: UInt64(info.st_ino))
+    }
+}
+
 public final class CompanionReader {
     private var db: OpaquePointer?
+    /// The file identity taken just before the database was opened; compare it with `CompanionFileIdentity.of`
+    /// to notice that the path now points at a different file.
+    public let fileIdentity: CompanionFileIdentity?
 
     private static let required: [String: Set<String>] = [
         "message": ["guid", "text", "attributedBody", "date", "is_from_me", "handle_id", "associated_message_type",
-                    "thread_originator_guid", "cache_has_attachments"],
+                    "thread_originator_guid", "cache_has_attachments", "item_type"],
         "chat": ["guid", "style", "display_name"],
         "handle": ["id"],
         "chat_handle_join": ["chat_id", "handle_id"],
@@ -42,6 +58,8 @@ public final class CompanionReader {
 
     public init(path: String, decodeMarker: URL? = nil) throws(CompanionReaderError) {
         self.decodeMarker = decodeMarker
+        // Before the open: a swap in between then shows as a mismatch on the next check, never as a missed one.
+        self.fileIdentity = CompanionFileIdentity.of(path: path)
         var handle: OpaquePointer?
         let result = sqlite3_open_v2(path, &handle, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nil)
         guard result == SQLITE_OK, let handle else {
@@ -77,6 +95,20 @@ public final class CompanionReader {
         return value
     }
 
+    /// The highest ROWID `message` has ever handed out. chat.db's message table uses AUTOINCREMENT, whose
+    /// `sqlite_sequence` entry stays put when the newest messages are deleted, unlike MAX(ROWID). Falls back to
+    /// MAX(ROWID) when the database has no such entry.
+    public func highWaterRowID() throws(CompanionReaderError) -> Int64 {
+        var hasSequence = false
+        try each("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'sqlite_sequence'") { _ in hasSequence = true }
+        var sequence: Int64 = 0
+        if hasSequence {
+            try each("SELECT seq FROM sqlite_sequence WHERE name = 'message'") { sequence = sqlite3_column_int64($0, 0) }
+        }
+        let top = try maxRowID()
+        return max(sequence, top)
+    }
+
     /// The lowest ROWID dated at or after `since`, or nil when there is none.
     public func firstRowID(since: Date) throws(CompanionReaderError) -> Int64? {
         var value: Int64?
@@ -98,7 +130,8 @@ public final class CompanionReader {
             m.thread_originator_guid, m.cache_has_attachments,
             (SELECT COUNT(*) FROM message_attachment_join ma WHERE ma.message_id = m.ROWID),
             (SELECT c.guid FROM chat_message_join cm JOIN chat c ON c.ROWID = cm.chat_id
-                WHERE cm.message_id = m.ROWID ORDER BY c.ROWID LIMIT 1)
+                WHERE cm.message_id = m.ROWID ORDER BY c.ROWID LIMIT 1),
+            m.item_type
         FROM message m LEFT JOIN handle h ON h.ROWID = m.handle_id
         WHERE m.ROWID > ? ORDER BY m.ROWID LIMIT ?
         """
@@ -108,6 +141,13 @@ public final class CompanionReader {
         try each(sql, [.int(rowID), .int(Int64(max(limit, 0)))]) { s in
             guard !held else { return }
             let rowid = sqlite3_column_int64(s, 0)
+            // A group event or other system row: non-zero item_type with no text, body or attachments. A row that
+            // carries any of those is read as usual, so an ordinary message is never dropped on item_type alone.
+            if sqlite3_column_int64(s, 12) != 0, Self.text(s, 2) == nil, Self.blob(s, 3) == nil,
+               sqlite3_column_int64(s, 9) == 0, sqlite3_column_int64(s, 10) == 0 {
+                last = rowid
+                return
+            }
             let raw = Double(sqlite3_column_int64(s, 4))
             let sentAt = Date(timeIntervalSinceReferenceDate: raw > 1e12 ? raw / 1e9 : raw)
             guard let thread = Self.text(s, 11), let guid = Self.text(s, 1) else {  // no chat, no thread

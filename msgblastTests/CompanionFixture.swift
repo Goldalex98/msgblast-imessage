@@ -15,9 +15,9 @@ final class CompanionFixture {
         CREATE TABLE handle(ROWID INTEGER PRIMARY KEY, id TEXT);
         CREATE TABLE chat_handle_join(chat_id INTEGER, handle_id INTEGER);
         CREATE TABLE chat_message_join(chat_id INTEGER, message_id INTEGER);
-        CREATE TABLE message(ROWID INTEGER PRIMARY KEY, guid TEXT, text TEXT, attributedBody BLOB, date INTEGER,
+        CREATE TABLE message(ROWID INTEGER PRIMARY KEY AUTOINCREMENT, guid TEXT, text TEXT, attributedBody BLOB, date INTEGER,
             is_from_me INTEGER, handle_id INTEGER, associated_message_type INTEGER, thread_originator_guid TEXT,
-            cache_has_attachments INTEGER);
+            cache_has_attachments INTEGER, item_type INTEGER DEFAULT 0);
         CREATE TABLE attachment(ROWID INTEGER PRIMARY KEY, guid TEXT, filename TEXT);
         CREATE TABLE message_attachment_join(message_id INTEGER, attachment_id INTEGER);
         """)
@@ -49,14 +49,14 @@ final class CompanionFixture {
     @discardableResult
     func addMessage(chats: [Int64], guid: String = UUID().uuidString, text: String? = nil, attributedBody: Data? = nil,
                     date: Date = Date(), fromMe: Bool = false, handle: String? = nil, associatedType: Int = 0,
-                    threadOriginator: String? = nil, attachments: Int = 0) throws -> Int64 {
+                    threadOriginator: String? = nil, attachments: Int = 0, itemType: Int = 0) throws -> Int64 {
         let handleID: Int64 = try handle.map(handleRowID) ?? 0
         let nanos = Int64(date.timeIntervalSinceReferenceDate * 1e9)
         try run("""
             INSERT INTO message(guid, text, attributedBody, date, is_from_me, handle_id, associated_message_type,
-                thread_originator_guid, cache_has_attachments) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
+                thread_originator_guid, cache_has_attachments, item_type) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, [guid, text, attributedBody, nanos, fromMe ? 1 : 0, handleID, associatedType, threadOriginator,
-                  attachments > 0 ? 1 : 0])
+                  attachments > 0 ? 1 : 0, itemType])
         let message = sqlite3_last_insert_rowid(db)
         for chat in chats { try run("INSERT INTO chat_message_join(chat_id, message_id) VALUES(?, ?)", [chat, message]) }
         for index in 0..<attachments {
