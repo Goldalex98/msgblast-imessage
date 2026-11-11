@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-10 20:25 ET
+**Updated:** 2026-11-10 20:55 ET
 **At:** The Mac uplinks to the live HomeChat (build `2bcc8ad`); acceptance checks 1–4 passed at the Mac; checks 5–8 not run (Alex chose to move on).
 **Next:** HomeChat PR C (twice-daily update, date nudge, replies), open in `homechat-bot` and run from the EliteBook under that repo's rules; this repo waits on it.
 **Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger live (PR B); update (PR C) in review; desk items (PR D) not built.
@@ -17,12 +17,11 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
-- PR #17 (`phase1/reader-hardening`, plan `docs/superpowers/plans/2026-11-10-reader-hardening.md`): reader hardening (reopen on a replaced chat.db, visible reset stop, system rows passed over, 4 MiB decode cap) plus phase 3 send notes. Fork CI running; merge once green. Not installed.
 - Fork CI (`fork-ci.yml`): runs on PRs and pushes to `main`.
 - "msgblast iMessage.app" (build `2bcc8ad`, installed 2026-11-09 19:44 ET; the previous copy is kept outside the repo for rollback) on the MacBook, address and token saved, uplinking new messages to HomeChat within seconds.
 
 ## QUEUED
-- After PR #17 merges: at the MacBook, run the plan's counts-only pre-install checks (AUTOINCREMENT on `message`, `item_type` counts) and the native gate, then rebuild and reinstall (quit the app first).
+- Reader hardening (merged, PR #17) is not installed: at the MacBook, run the plan's counts-only pre-install checks (AUTOINCREMENT on `message`, `item_type` counts) and the native gate, then rebuild and reinstall (quit the app first).
 - Phase 3 plan: start from `docs/superpowers/specs/2026-11-10-phase3-send-notes.md` (what to borrow from other send implementations, what to avoid, five questions for Alex).
 - `homechat-bot` PR C (twice-daily update and replies, open as homechat-bot#231) and PR D (`txt-` desk items, not started), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
 - Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip): not run; worth running now the flagger is live, so the same test texts can also check flags and auto-clear.
@@ -38,6 +37,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - None. Terminal keeps Full Disk Access and Automation → Messages for now, by Alex's choice (2026-11-09), in case a Terminal step is needed again.
 
 ## DONE
+- 2026-11-10: PR #17 merged (`651f054`): reader hardening (reopen on a replaced chat.db, a visible reset stop using `sqlite_sequence`, system rows passed over, 4 MiB decode cap) plus phase 3 send notes; green full native suite on the PR. PR #18 merged (`a1ee574`): fork CI scopes the Mac job (none for docs/`.claude`-only PRs, the companion suites for companion-only PRs, the full suite otherwise and on `main`) and runs it in parallel (trial: test step 12m43s vs 20m53s, green). PR #16 merged (`411c626`): agent turn caps raised. The `main` run on `a1ee574` covers all three. Not installed on the Mac.
 - 2026-11-10: HomeChat PR B (flagger, scrubber, auto-clear, per-kind spend) merged in `homechat-bot` (homechat-bot#227) and recorded there as live (homechat-bot#228). Not checked from this repo: a flag raised by a real text, seen on Alex's phone, or cleared by his reply.
 - 2026-11-09: stale branch `plan/phase1-mac` deleted by Alex (local and GitHub). Its commit with the private domain name stays reachable through closed PR #10 on GitHub.
 - 2026-11-08: phase 1 Mac plan Tasks 1–10 on `phase1/mac-read-uplink`: contract, wire models, `attributedBody` decoder, group-aware reader, scrubber, config/Keychain token/uplink client, companion service, Contacts names, Settings section and app wiring, acceptance runbook. Three automated security-review findings fixed test-first (scrubber patterns, actor reentrancy, phone country codes). Rulings in the plan ledger, summarised in LOG.
