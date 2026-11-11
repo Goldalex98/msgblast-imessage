@@ -30,11 +30,35 @@ jobs:
       - name: Python script tests (Linux gate)
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 
+  changes:
+    # How much native testing this change needs (scripts/ci_native_scope.py): none for docs/.claude/Markdown-only
+    # PRs, the companion suites for companion-only PRs, the full suite otherwise and on every push to main.
+    if: github.repository == 'Goldalex98/msgblast-imessage'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      native: ${{ steps.scope.outputs.native }}
+      scope: ${{ steps.scope.outputs.scope }}
+      only_testing: ${{ steps.scope.outputs.only_testing }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Decide the native test scope
+        id: scope
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: python3 scripts/ci_native_scope.py
+
   native:
     # GitHub-hosted (ephemeral) image, not self-hosted. Still only for this repo's own branches:
     # PRs from other forks get the Linux job only.
+    needs: changes
     if: >-
       github.repository == 'Goldalex98/msgblast-imessage' &&
+      needs.changes.outputs.native == 'true' &&
       (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: xcode-27
     timeout-minutes: 60
@@ -49,5 +73,10 @@ jobs:
         run: xcodebuild -version
       - name: Python script tests on macOS
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
-      - name: Native core tests (docs/testing.md)
-        run: xcodebuild -project msgblast.xcodeproj -scheme msgblast -configuration Debug -derivedDataPath build/contributor-tests -destination 'platform=macOS,arch=arm64' MSGBLAST_APP_BUNDLE_IDENTIFIER=com.msgblast.contributor-tests ASSETCATALOG_COMPILER_APPICON_NAME=AppIconDemo -only-testing:msgblastTests test
+      - name: Native core tests (docs/testing.md), scope ${{ needs.changes.outputs.scope }}
+        # The full suite runs in parallel test processes (most of its time is upstream's timer-bound driver tests).
+        env:
+          ONLY_TESTING: ${{ needs.changes.outputs.only_testing }}
+        run: |
+          # shellcheck disable=SC2086 # ONLY_TESTING is a space-separated flag list from the changes job.
+          xcodebuild -project msgblast.xcodeproj -scheme msgblast -configuration Debug -derivedDataPath build/contributor-tests -destination 'platform=macOS,arch=arm64' MSGBLAST_APP_BUNDLE_IDENTIFIER=com.msgblast.contributor-tests ASSETCATALOG_COMPILER_APPICON_NAME=AppIconDemo -parallel-testing-enabled YES $ONLY_TESTING test
