@@ -8,7 +8,7 @@ description: >-
 tools: Read, Grep, Glob, Bash
 model: sonnet
 effort: medium
-maxTurns: 45
+maxTurns: 90
 color: orange
 ---
 
