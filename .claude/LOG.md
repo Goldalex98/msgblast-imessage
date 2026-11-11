@@ -120,3 +120,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Four Mac-only fixes for silent stops: reopen on a replaced chat.db, a visible stop on a reset, system rows passed over, and a 4 MiB decode cap. The reset check uses `sqlite_sequence`, so deleting the newest messages doesn't trigger it. A review finding narrowed the system-row skip to rows with no text, body or attachments.
 - Left for HomeChat (contract changes): edits and unsends, a sibling SMS/iMessage chat, a failed outgoing row clearing a flag, and recovery after a reset.
 - Phase 3 send notes written as plan input. Main points: pass the text as an argument, not script source; keep a pre-dispatch send record on the Mac; take a ROWID baseline and read the `error`/`is_sent` read-back; a real hash binding to the approved text.
+
+## 2026-11-10 20:55 ET: PRs #16–#18 merged; faster Mac CI
+- The Mac job was about 3 minutes of build and about 18 of tests, mostly upstream's timer-bound driver tests. So the speed-up skips or narrows the tests rather than caching the build.
+- What it does: `scripts/ci_native_scope.py` decides the scope per PR. The full suite now runs with `-parallel-testing-enabled`.
+- One green parallel trial (12m43s): flakiness isn't ruled out yet. If a full-suite run fails in a way that doesn't repeat, take parallel out and keep the scoping.
+- Alex approved the new gate rule (CLAUDE.md): a red full-suite run on `main` after a merge stops further merges until it's fixed forward.
