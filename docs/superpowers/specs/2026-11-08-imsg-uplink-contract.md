@@ -56,7 +56,7 @@
 |---|---|
 | `device_id` | The Mac's stable ID, `mac-` + 8 hex characters, made on first launch. |
 | `batch_id` | A fresh UUID per post attempt. For logs only; idempotency is per message `guid`. |
-| `cursor` | The highest `chat.db` ROWID the Mac scanned for this batch. It can be above the last message's `rowid` when rows with no chat were passed over. |
+| `cursor` | The highest `chat.db` ROWID the Mac scanned for this batch. It can be above the last message's `rowid` when rows with no chat, or system rows (non-zero `item_type` with no text, body or attachments, such as group membership changes), were passed over. A saved cursor above the database's highest ROWID stops the Mac with a visible status instead of reading (reader-hardening plan, 2026-11-10). |
 | `first_run` | `true` while the Mac has never had a batch accepted. The window is then the last 3 days. |
 | `threads` | Every thread that this batch's messages reference, once each. |
 | `threads[].kind` | `direct` (one other person) or `group`. |

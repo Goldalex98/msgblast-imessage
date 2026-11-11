@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-10 15:05 ET
+**Updated:** 2026-11-10 20:25 ET
 **At:** The Mac uplinks to the live HomeChat (build `2bcc8ad`); acceptance checks 1–4 passed at the Mac; checks 5–8 not run (Alex chose to move on).
 **Next:** HomeChat PR C (twice-daily update, date nudge, replies), open in `homechat-bot` and run from the EliteBook under that repo's rules; this repo waits on it.
 **Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger live (PR B); update (PR C) in review; desk items (PR D) not built.
@@ -17,10 +17,13 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
+- PR #17 (`phase1/reader-hardening`, plan `docs/superpowers/plans/2026-11-10-reader-hardening.md`): reader hardening (reopen on a replaced chat.db, visible reset stop, system rows passed over, 4 MiB decode cap) plus phase 3 send notes. Fork CI running; merge once green. Not installed.
 - Fork CI (`fork-ci.yml`): runs on PRs and pushes to `main`.
 - "msgblast iMessage.app" (build `2bcc8ad`, installed 2026-11-09 19:44 ET; the previous copy is kept outside the repo for rollback) on the MacBook, address and token saved, uplinking new messages to HomeChat within seconds.
 
 ## QUEUED
+- After PR #17 merges: at the MacBook, run the plan's counts-only pre-install checks (AUTOINCREMENT on `message`, `item_type` counts) and the native gate, then rebuild and reinstall (quit the app first).
+- Phase 3 plan: start from `docs/superpowers/specs/2026-11-10-phase3-send-notes.md` (what to borrow from other send implementations, what to avoid, five questions for Alex).
 - `homechat-bot` PR C (twice-daily update and replies, open as homechat-bot#231) and PR D (`txt-` desk items, not started), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
 - Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip): not run; worth running now the flagger is live, so the same test texts can also check flags and auto-clear.
 - Small app fix: Save with an empty token field silently keeps "no token" and shows no error; it should say a token is still needed.

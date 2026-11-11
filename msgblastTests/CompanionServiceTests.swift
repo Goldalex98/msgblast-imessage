@@ -304,6 +304,85 @@ final class CompanionServiceTests: XCTestCase {
         XCTAssertNil(thread.displayName)
     }
 
+    func test_reopensWhenTheDatabaseFileIsReplaced() async throws {
+        try configure(cursor: 0)
+        let f = try CompanionFixture()
+        let chat = try directChat(f)
+        try f.addMessage(chats: [chat], text: "first", date: clock.now - 60, handle: alice)
+        let s = service(f.url.path)
+        _ = await s.tick()
+        XCTAssertEqual(uplink.batches.flatMap { $0.messages.map(\.rowid) }, [1])
+        let replacement = try CompanionFixture()
+        let newChat = try directChat(replacement)
+        try replacement.addMessage(chats: [newChat], text: "first", date: clock.now - 60, handle: alice)
+        try replacement.addMessage(chats: [newChat], text: "second", date: clock.now - 60, handle: alice)
+        XCTAssertEqual(rename(replacement.url.path, f.url.path), 0)
+        _ = await s.tick()
+        XCTAssertEqual(uplink.batches.count, 2)
+        XCTAssertEqual(uplink.batches[1].messages.map(\.rowid), [2])
+        XCTAssertEqual(savedCursor, 2)
+    }
+
+    func test_fileGoneAfterOpenReportsNoAccess() async throws {
+        try configure(cursor: 0)
+        let f = try CompanionFixture()
+        try f.addMessage(chats: [try directChat(f)], text: "m", date: clock.now - 60, handle: alice)
+        let s = service(f.url.path)
+        _ = await s.tick()
+        try FileManager.default.removeItem(at: f.url)
+        let status = await s.tick()
+        XCTAssertEqual(status.state, .noDatabaseAccess)
+    }
+
+    func test_cursorAheadOfDatabaseStopsAndRecoversWhenCleared() async throws {
+        try configure(cursor: 10_000)
+        let f = try CompanionFixture()
+        let chat = try directChat(f)
+        for _ in 0..<40 { try f.addMessage(chats: [chat], text: "m", date: clock.now - 60, handle: alice) }
+        let s = service(f.url.path)
+        let status = await s.tick()
+        XCTAssertEqual(status.state, .stopped("Messages database was reset; the companion needs a fresh start"))
+        XCTAssertTrue(uplink.batches.isEmpty)
+        XCTAssertEqual(savedCursor, 10_000, "the cursor is never lowered on its own")
+        let again = await s.tick()
+        XCTAssertEqual(again.state, status.state, "still stopped on the next tick")
+        try configure(cursor: nil)
+        _ = await s.tick()
+        XCTAssertEqual(uplink.batches.count, 1, "clearing the cursor lets the next tick start again")
+        XCTAssertTrue(uplink.batches[0].firstRun)
+    }
+
+    func test_deletingTheNewestMessagesIsNotAReset() async throws {
+        try configure(cursor: 0)
+        let f = try CompanionFixture()
+        let chat = try directChat(f)
+        for _ in 0..<3 { try f.addMessage(chats: [chat], text: "m", date: clock.now - 60, handle: alice) }
+        let s = service(f.url.path)
+        _ = await s.tick()
+        XCTAssertEqual(savedCursor, 3)
+        try f.exec("DELETE FROM message WHERE ROWID = 3")
+        let after = await s.tick()
+        XCTAssertNotEqual(after.state, .stopped("Messages database was reset; the companion needs a fresh start"))
+        try f.addMessage(chats: [chat], text: "new", date: clock.now - 10, handle: alice)
+        _ = await s.tick()
+        XCTAssertEqual(uplink.batches.last?.messages.map(\.rowid), [4], "AUTOINCREMENT never reuses ROWID 3")
+    }
+
+    func test_systemRowsAreNotUplinkedButTheCursorPassesThem() async throws {
+        try configure(cursor: 0)
+        let f = try CompanionFixture()
+        let chat = try f.addChat(guid: "iMessage;+;group", style: 43, displayName: nil, handles: [alice, bob])
+        try f.addMessage(chats: [chat], text: "one", date: clock.now - 60, handle: alice)
+        for type in 1...3 { try f.addMessage(chats: [chat], date: clock.now - 60, handle: bob, itemType: type) }
+        try f.addMessage(chats: [chat], text: "two", date: clock.now - 60, handle: bob)
+        try f.addMessage(chats: [chat], date: clock.now - 60, handle: bob, itemType: 1)
+        try f.addMessage(chats: [chat], text: "kept", date: clock.now - 60, handle: bob, itemType: 2)
+        _ = await service(f.url.path).tick()
+        XCTAssertEqual(uplink.batches.count, 1)
+        XCTAssertEqual(uplink.batches[0].messages.map(\.rowid), [1, 5, 7], "a non-zero item_type with text is still read")
+        XCTAssertEqual(savedCursor, 7)
+    }
+
     func test_notConfigured() async throws {
         try configure(cursor: 0, url: nil)
         let missing = folder.appendingPathComponent("missing.db").path

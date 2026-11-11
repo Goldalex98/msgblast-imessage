@@ -224,4 +224,37 @@ final class CompanionReaderTests: XCTestCase {
         XCTAssertEqual(before[.modificationDate] as? Date, after[.modificationDate] as? Date)
         XCTAssertEqual(before[.size] as? Int, after[.size] as? Int)
     }
+
+    func test_systemRowsAreSkippedAndPassed() throws {
+        let f = try CompanionFixture()
+        let group = try f.addChat(guid: "iMessage;+;group", style: 43, displayName: nil, handles: [alice, bob])
+        try f.addMessage(chats: [group], text: "one", handle: alice)
+        try f.addMessage(chats: [group], handle: alice, itemType: 1)
+        try f.addMessage(chats: [group], handle: bob, itemType: 2)
+        try f.addMessage(chats: [group], text: "two", handle: bob)
+        try f.addMessage(chats: [group], fromMe: true, itemType: 3)
+        let result = try reader(f).rows(after: 0, limit: 10)
+        XCTAssertEqual(result.messages.map(\.rowid), [1, 4])
+        XCTAssertEqual(result.messages.map(\.kind), [.text, .text])
+        XCTAssertEqual(result.lastScannedRowID, 5, "the cursor passes a trailing system row")
+    }
+
+    func test_missingItemTypeColumnIsUnsupportedSchema() throws {
+        let f = try CompanionFixture()
+        try f.exec("ALTER TABLE message DROP COLUMN item_type")
+        XCTAssertThrowsError(try CompanionReader(path: f.url.path)) { error in
+            guard case .unsupportedSchema = error as? CompanionReaderError else { return XCTFail("got \(error)") }
+        }
+    }
+
+    func test_bodyOverTheCapIsUnreadableOrAttachmentOnly() throws {
+        let f = try CompanionFixture()
+        let chat = try f.addChat(guid: "iMessage;-;direct", style: 45, displayName: nil, handles: [alice])
+        let huge = AttributedBodyDecoderTests.archived(String(repeating: "z", count: 4 * 1024 * 1024 + 1024))
+        try f.addMessage(chats: [chat], attributedBody: huge, handle: alice)
+        try f.addMessage(chats: [chat], attributedBody: huge, handle: alice, attachments: 1)
+        let messages = try reader(f).rows(after: 0, limit: 10).messages
+        XCTAssertEqual(messages.map(\.kind), [.unreadable, .attachmentOnly])
+        XCTAssertTrue(messages.allSatisfy { $0.text == nil })
+    }
 }

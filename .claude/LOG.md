@@ -114,3 +114,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Checks 1–4 passed against counts-only, read-only readbacks of HomeChat's store. Alex chose to move on before checks 5–8, so restart catch-up, offline retry and the scrubber on real data stay unproven at runtime (unit tests cover them on synthetic data).
 - The token didn't save on the first tries: Save with an empty token field keeps "no token" without an error, which hid what went wrong. Queued as a small app fix.
 - Next is HomeChat's flagger (PR B), from the EliteBook.
+
+## 2026-11-10 20:25 ET: reader hardening from other chat.db readers (PR #17)
+- Compared the companion with `anipottsbuilds/imessage-mcp` (21 releases), its fork `jaredzimmerman/iMessageMCP` (adds sending), the other forks, and other send code (Prpking, daveremy, JonathanRReed, BlueBubbles). We took ideas only. None of them replaces the fork: phase 1 is already live, and sending already works through msgblast.
+- Four Mac-only fixes for silent stops: reopen on a replaced chat.db, a visible stop on a reset, system rows passed over, and a 4 MiB decode cap. The reset check uses `sqlite_sequence`, so deleting the newest messages doesn't trigger it. A review finding narrowed the system-row skip to rows with no text, body or attachments.
+- Left for HomeChat (contract changes): edits and unsends, a sibling SMS/iMessage chat, a failed outgoing row clearing a flag, and recovery after a reset.
+- Phase 3 send notes written as plan input. Main points: pass the text as an argument, not script source; keep a pre-dispatch send record on the Mac; take a ROWID baseline and read the `error`/`is_sent` read-back; a real hash binding to the approved text.

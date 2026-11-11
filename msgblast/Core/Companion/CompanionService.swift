@@ -42,6 +42,7 @@ public actor CompanionService {
     static let maxBodyBytes = 900_000
     /// A chat-less row this new may just not be linked to its chat yet.
     static let orphanHold: TimeInterval = 10
+    static let resetStatus = "Messages database was reset; the companion needs a fresh start"
 
     private let databasePath: String
     private let configURL: URL
@@ -97,9 +98,17 @@ public actor CompanionService {
             return update(.offline(retryIn: retryAt.timeIntervalSince(now())), config: config)
         }
 
+        dropReaderIfFileReplaced()
         let reader: CompanionReader
         do throws(CompanionReaderError) {
             reader = try openReader()
+            // A cursor past the highest ROWID ever handed out means the database was reset (deleting the newest
+            // messages doesn't count: see highWaterRowID). Not sticky: it is re-checked each tick, so clearing the
+            // cursor lets the next tick start again. The cursor itself is never lowered here.
+            if let cursor = config.cursor, try reader.highWaterRowID() < cursor {
+                caughtUp = false
+                return update(.stopped(Self.resetStatus), config: config)
+            }
             let version = try reader.dataVersion()
             if version == lastDataVersion, caughtUp, retryAt == nil { return update(.idle, config: config) }
             lastDataVersion = version
@@ -199,6 +208,13 @@ public actor CompanionService {
         reader = opened
         lastDataVersion = nil
         return opened
+    }
+
+    /// Messages may replace chat.db (a rename over the path, a rebuild); the open connection would keep reading
+    /// the old file. A missing file also counts as a change, and the reopen then reports it as unreadable.
+    private func dropReaderIfFileReplaced() {
+        guard let reader else { return }
+        if CompanionFileIdentity.of(path: databasePath) != reader.fileIdentity { closeReader() }
     }
 
     private func closeReader() {

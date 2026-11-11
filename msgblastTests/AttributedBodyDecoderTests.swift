@@ -28,4 +28,19 @@ final class AttributedBodyDecoderTests: XCTestCase {
     func test_nonAttributedRootReturnsNil() {
         XCTAssertNil(AttributedBodyDecoder.text(from: NSArchiver.archivedData(withRootObject: NSNumber(value: 42))))
     }
+
+    func test_emptyStringDecodesToNoText() {
+        XCTAssertTrue((AttributedBodyDecoder.text(from: Self.archived("")) ?? "").isEmpty)
+    }
+
+    func test_largeBodyUnderTheCapDecodes() {
+        let text = String(repeating: "z", count: 1_572_864)  // 1.5 MiB
+        XCTAssertEqual(AttributedBodyDecoder.text(from: Self.archived(text)), text)
+    }
+
+    func test_blobOverTheCapIsNotDecoded() {
+        let blob = Self.archived(String(repeating: "z", count: 4 * 1024 * 1024 + 1024))
+        XCTAssertGreaterThan(blob.count, AttributedBodyDecoder.maxBlobBytes)
+        XCTAssertNil(AttributedBodyDecoder.text(from: blob), "a well-formed blob over the cap is refused before any unarchiving")
+    }
 }
