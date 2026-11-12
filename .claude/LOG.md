@@ -163,3 +163,7 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
   - no log line for a redelivered in-progress send;
   - the plan doesn't cite spike (c).
 - Non-ASCII text through argv is proven only in the test runner's locale. Runbook check B sends an accent and an emoji.
+
+## 2026-11-11 22:30 ET: phase 3 Mac side merged (PR #23)
+- The first full Mac gate had 3 timeouts in upstream's timer-bound desktop-app driver tests (`DesktopAppDriverTests` ×2, `GeminiAppDriverTests` ×1). The same three passed alone in 4 s. A second full run passed (1052, 0 failed), so the timeouts are load-dependent flakes in tests the branch doesn't touch. Not fixed here.
+- Not installed on the Mac. The send switch is off by default, and nothing can be sent until HomeChat's half exists.

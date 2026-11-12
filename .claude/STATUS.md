@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-11 22:05 ET
+**Updated:** 2026-11-11 22:30 ET
 **At:** The Mac runs the reader-hardening build (`2d037cc`, installed 2026-11-10 22:06 ET) and reads Up to date; acceptance checks 1–4 passed on `2bcc8ad`; checks 5–8 not run on either build (no test contact free).
 **Next:** HomeChat's phase 3 send half in `homechat-bot` (routes, queue, `N yes` / `N edit:`, against the contract's "Sends (phase 3)"), then phase 3 Mac acceptance A–G with a test contact and Alex's yes per send. Also open: Mac checks 5–8 plus a flag-and-clear check, and HomeChat PR D.
 **Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger (PR B) live; update and replies (PR C) merged in `homechat-bot`; desk items (PR D) not built.
@@ -36,7 +36,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - None. Terminal keeps Full Disk Access and Automation → Messages for now, by Alex's choice (2026-11-09), in case a Terminal step is needed again.
 
 ## DONE
-- 2026-11-11: phase 3 Mac side (plan Tasks 1–10) on `phase3/mac-sends`: send contract fixed, wire models, rules, a fixed argv AppleScript and runner, identity and read-back queries, outcome decision, no-text send ledger with an exclusive lock, sends client, executor, Settings switch (off by default), runbook. Send-safety review: 0 Critical, 3 Important fixed test-first, 6 minors deferred (LOG). Proven only on synthetic fixtures and fakes; no real send from the fork app.
+- 2026-11-11: PR #23 merged (`36e572a`; PR CI full suite green; Mac gate re-run Python 182/0 failed, native 1052/0 failed after a first run with 3 upstream driver-test timeouts that passed alone): phase 3 Mac side (plan Tasks 1–10): send contract fixed, wire models, rules, a fixed argv AppleScript and runner, identity and read-back queries, outcome decision, no-text send ledger with an exclusive lock, sends client, executor, Settings switch (off by default), runbook. Send-safety review: 0 Critical, 3 Important fixed test-first, 6 minors deferred (LOG). Proven only on synthetic fixtures and fakes; no real send from the fork app.
 - 2026-11-11: PR #22 merged (`97f28bb`): the approved phase 3 Mac plan; `main` CI green.
 - 2026-11-11: PR #21 merged (`8dfcba2`; Mac gate Python 182/0 failed, native 962/0 failed; PR and `main` CI green): Settings Save says when a token is still needed (empty field, none saved) and reads the token back after writing it, so a write that didn't stick shows an error instead of "Saved". The save logic moved into Core (`CompanionConfig.saveSettings`) with 7 unit tests on a fake token store. Not installed on the Mac; the signed app's Keychain path is unchanged and not re-checked.
 - 2026-11-10: reader hardening installed on the MacBook (build `2d037cc`) after the counts-only pre-install checks and the Mac gate passed; status reads Up to date.
