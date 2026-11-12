@@ -56,3 +56,50 @@ public struct CompanionConfig: Codable, Sendable, Equatable {
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
     }
 }
+
+/// What a Settings save did, for the status section to show.
+public struct CompanionSettingsOutcome: Equatable, Sendable {
+    /// The saved address's host; nil when the address wasn't saved.
+    public var host: String?
+    /// The config's device ID; nil when the address wasn't saved.
+    public var deviceID: String?
+    public var tokenSaved: Bool
+    /// Shown in red. nil means the uplink has an address and a readable token.
+    public var error: String?
+}
+
+public extension CompanionConfig {
+    static let tokenNeededMessage = "Address saved. Paste the uplink token too: none is saved yet."
+    static let tokenUnreadableMessage = "The token was written but can't be read back from the Keychain. Paste it again."
+
+    /// The Settings section's Save. `url` must be https with a host. An empty `token` keeps the saved one; with
+    /// none saved, the address is still saved and the outcome says a token is needed. The token is read back
+    /// after a write, so a write that didn't stick is reported instead of showing as saved.
+    static func saveSettings(url: String, token: String?, configURL: URL,
+                             tokens: CompanionTokenStoring) -> CompanionSettingsOutcome {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let parsed = URL(string: trimmed), parsed.scheme?.lowercased() == "https", let host = parsed.host,
+              !host.isEmpty else {
+            return CompanionSettingsOutcome(host: nil, deviceID: nil, tokenSaved: tokens.read() != nil,
+                                            error: "Enter an https:// address.")
+        }
+        var config = CompanionConfig.load(from: configURL)
+        config.uplinkURL = parsed
+        do {
+            try config.save(to: configURL)
+        } catch {
+            return CompanionSettingsOutcome(host: nil, deviceID: nil, tokenSaved: tokens.read() != nil,
+                                            error: "Couldn't save the settings file.")
+        }
+        var outcome = CompanionSettingsOutcome(host: host, deviceID: config.deviceID, tokenSaved: false, error: nil)
+        let entered = token?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !entered.isEmpty, !tokens.write(entered) {
+            outcome.tokenSaved = tokens.read() != nil
+            outcome.error = "Couldn't save the token to the Keychain."
+            return outcome
+        }
+        outcome.tokenSaved = tokens.read() != nil
+        if !outcome.tokenSaved { outcome.error = entered.isEmpty ? tokenNeededMessage : tokenUnreadableMessage }
+        return outcome
+    }
+}

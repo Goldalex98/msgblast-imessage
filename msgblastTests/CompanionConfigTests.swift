@@ -53,4 +53,103 @@ final class CompanionConfigTests: XCTestCase {
         let url = CompanionConfig.defaultURL(supportFolder: "msgblast-iMessage")
         XCTAssertTrue(url.path.hasSuffix("/Library/Application Support/msgblast-iMessage/companion.json"), url.path)
     }
+
+    // MARK: Settings save (the Settings section's Save button)
+
+    private var configURL: URL { folder.appendingPathComponent("companion.json") }
+
+    func test_saveWithAddressAndTokenIsReady() {
+        let tokens = SettingsTokens(nil)
+        let outcome = CompanionConfig.saveSettings(url: " https://home.example/ ", token: " tok-1\n", configURL: configURL,
+                                                   tokens: tokens)
+        XCTAssertNil(outcome.error)
+        XCTAssertEqual(outcome.host, "home.example")
+        XCTAssertTrue(outcome.tokenSaved)
+        XCTAssertEqual(tokens.read(), "tok-1")
+        XCTAssertEqual(CompanionConfig.load(from: configURL).uplinkURL?.host, "home.example")
+        XCTAssertEqual(outcome.deviceID, CompanionConfig.load(from: configURL).deviceID)
+    }
+
+    func test_saveWithEmptyTokenAndNoneSavedSaysTokenNeeded() {
+        for entered in [nil, "", "  \n"] as [String?] {
+            let tokens = SettingsTokens(nil)
+            let outcome = CompanionConfig.saveSettings(url: "https://home.example", token: entered, configURL: configURL,
+                                                       tokens: tokens)
+            XCTAssertEqual(outcome.error, CompanionConfig.tokenNeededMessage, "\(String(describing: entered))")
+            XCTAssertEqual(outcome.host, "home.example", "the address is still saved")
+            XCTAssertFalse(outcome.tokenSaved)
+            XCTAssertEqual(CompanionConfig.load(from: configURL).uplinkURL?.host, "home.example")
+            XCTAssertEqual(tokens.writes, 0, "an empty field never deletes or writes the token")
+        }
+    }
+
+    func test_saveWithEmptyTokenKeepsSavedOne() {
+        let tokens = SettingsTokens("tok-old")
+        let outcome = CompanionConfig.saveSettings(url: "https://home.example", token: "", configURL: configURL,
+                                                   tokens: tokens)
+        XCTAssertNil(outcome.error)
+        XCTAssertTrue(outcome.tokenSaved)
+        XCTAssertEqual(tokens.read(), "tok-old")
+        XCTAssertEqual(tokens.writes, 0)
+    }
+
+    func test_saveRejectsNonHTTPSAndTouchesNothing() {
+        for bad in ["", "http://home.example", "home.example", "https://"] {
+            let tokens = SettingsTokens(nil)
+            let outcome = CompanionConfig.saveSettings(url: bad, token: "tok-1", configURL: configURL, tokens: tokens)
+            XCTAssertEqual(outcome.error, "Enter an https:// address.", bad)
+            XCTAssertNil(outcome.host, bad)
+            XCTAssertEqual(tokens.writes, 0, bad)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: configURL.path), bad)
+        }
+    }
+
+    func test_saveReportsKeychainWriteFailureButKeepsAddress() {
+        let tokens = SettingsTokens(nil, writeSucceeds: false)
+        let outcome = CompanionConfig.saveSettings(url: "https://home.example", token: "tok-1", configURL: configURL,
+                                                   tokens: tokens)
+        XCTAssertEqual(outcome.error, "Couldn't save the token to the Keychain.")
+        XCTAssertEqual(outcome.host, "home.example")
+        XCTAssertFalse(outcome.tokenSaved)
+    }
+
+    func test_saveReportsTokenThatCantBeReadBack() {
+        let tokens = SettingsTokens(nil, readable: false)
+        let outcome = CompanionConfig.saveSettings(url: "https://home.example", token: "tok-1", configURL: configURL,
+                                                   tokens: tokens)
+        XCTAssertEqual(outcome.error, CompanionConfig.tokenUnreadableMessage)
+        XCTAssertFalse(outcome.tokenSaved)
+    }
+
+    func test_saveReportsSettingsFileFailure() throws {
+        // A plain file where the support folder should be makes the save fail.
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let blocker = folder.appendingPathComponent("blocked")
+        try Data().write(to: blocker)
+        let tokens = SettingsTokens(nil)
+        let outcome = CompanionConfig.saveSettings(url: "https://home.example", token: "tok-1",
+                                                   configURL: blocker.appendingPathComponent("companion.json"), tokens: tokens)
+        XCTAssertEqual(outcome.error, "Couldn't save the settings file.")
+        XCTAssertNil(outcome.host)
+        XCTAssertEqual(tokens.writes, 0)
+    }
+}
+
+private final class SettingsTokens: CompanionTokenStoring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var token: String?
+    private let writeSucceeds: Bool
+    private let readable: Bool
+    private(set) var writes = 0
+    init(_ token: String?, writeSucceeds: Bool = true, readable: Bool = true) {
+        self.token = token; self.writeSucceeds = writeSucceeds; self.readable = readable
+    }
+    func read() -> String? { lock.lock(); defer { lock.unlock() }; return readable ? token : nil }
+    @discardableResult func write(_ token: String?) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        writes += 1
+        guard writeSucceeds else { return false }
+        self.token = token
+        return true
+    }
 }

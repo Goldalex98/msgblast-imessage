@@ -53,32 +53,14 @@ final class CompanionController: ObservableObject {
         Task { @MainActor in status = await service.setPaused(paused) }
     }
 
-    /// `url` must be https. An empty `token` keeps the saved one.
+    /// `url` must be https. An empty `token` keeps the saved one; with none saved, the error says one is needed.
     func saveSettings(url: String, token: String?) {
-        settingsError = nil
-        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let parsed = URL(string: trimmed), parsed.scheme?.lowercased() == "https", let host = parsed.host,
-              !host.isEmpty else {
-            settingsError = "Enter an https:// address."
-            return
-        }
-        var config = CompanionConfig.load(from: configURL)
-        config.uplinkURL = parsed
-        do {
-            try config.save(to: configURL)
-        } catch {
-            settingsError = "Couldn't save the settings file."
-            return
-        }
-        if let token = token?.trimmingCharacters(in: .whitespacesAndNewlines), !token.isEmpty {
-            guard tokens.write(token) else {
-                settingsError = "Couldn't save the token to the Keychain."
-                return
-            }
-        }
+        let outcome = CompanionConfig.saveSettings(url: url, token: token, configURL: configURL, tokens: tokens)
+        settingsError = outcome.error
+        tokenSaved = outcome.tokenSaved
+        guard let host = outcome.host else { return }
         uplinkHost = host
-        deviceID = config.deviceID
-        tokenSaved = tokens.read() != nil
+        deviceID = outcome.deviceID
         tick()
     }
 }

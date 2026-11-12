@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-10 22:15 ET
+**Updated:** 2026-11-11 20:50 ET
 **At:** The Mac runs the reader-hardening build (`2d037cc`, installed 2026-11-10 22:06 ET) and reads Up to date; acceptance checks 1–4 passed on `2bcc8ad`; checks 5–8 not run on either build (no test contact free).
 **Next:** Mac acceptance checks 5–8 plus a flag-and-clear check on the new build, when a test contact is free; HomeChat PR D (desk items) in `homechat-bot`.
 **Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger (PR B) live; update and replies (PR C) merged in `homechat-bot`; desk items (PR D) not built.
@@ -24,7 +24,6 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - Phase 3 plan: start from `docs/superpowers/specs/2026-11-10-phase3-send-notes.md` (what to borrow from other send implementations, what to avoid, five questions for Alex).
 - `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
 - Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip) on build `2d037cc`: not run, waiting for a free test contact. Run them with one question-shaped text so the same run checks a flag on Alex's phone and its clear on his reply.
-- Small app fix: Save with an empty token field silently keeps "no token" and shows no error; it should say a token is still needed.
 
 ## BLOCKED
 - None.
@@ -36,6 +35,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - None. Terminal keeps Full Disk Access and Automation → Messages for now, by Alex's choice (2026-11-09), in case a Terminal step is needed again.
 
 ## DONE
+- 2026-11-11: Settings Save says when a token is still needed (empty field, none saved) and reads the token back after writing it, so a write that didn't stick shows an error instead of "Saved". The save logic moved into Core (`CompanionConfig.saveSettings`) with 7 unit tests on a fake token store. Not installed on the Mac; the signed app's Keychain path is unchanged and not re-checked.
 - 2026-11-10: reader hardening installed on the MacBook (build `2d037cc`) after the counts-only pre-install checks and the Mac gate passed; status reads Up to date.
 - 2026-11-10: PR #17 merged (`651f054`): reader hardening (reopen on a replaced chat.db, a visible reset stop using `sqlite_sequence`, system rows passed over, 4 MiB decode cap) plus phase 3 send notes; green full native suite on the PR. PR #18 merged (`a1ee574`): fork CI scopes the Mac job (none for docs/`.claude`-only PRs, the companion suites for companion-only PRs, the full suite otherwise and on `main`) and runs it in parallel (trial: test step 12m43s vs 20m53s, green). PR #16 merged (`411c626`): agent turn caps raised. The `main` run on `a1ee574` covers all three. Not installed on the Mac.
 - 2026-11-10: HomeChat PR B (flagger, scrubber, auto-clear, per-kind spend) merged in `homechat-bot` (homechat-bot#227) and recorded there as live (homechat-bot#228). Not checked from this repo: a flag raised by a real text, seen on Alex's phone, or cleared by his reply.
