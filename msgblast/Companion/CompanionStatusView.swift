@@ -17,6 +17,14 @@ struct CompanionStatusView: View {
                 .toggleStyle(.switch).controlSize(.small)
         }
         Text(lastUplinkText).font(.callout).foregroundStyle(.secondary)
+        Toggle("Send approved replies", isOn: Binding(get: { controller.sendsEnabled },
+                                                      set: { controller.setSendsEnabled($0) }))
+            .toggleStyle(.switch).controlSize(.small)
+        if controller.sendStatus.ambiguousCount > 0 {
+            let count = controller.sendStatus.ambiguousCount
+            Text("\(count) \(count == 1 ? "reply" : "replies") may or may not have sent: check Messages")
+                .font(.callout).foregroundStyle(.red)
+        }
         DisclosureGroup("Details") {
             LabeledContent("HomeChat host", value: controller.uplinkHost.isEmpty ? "Not set" : controller.uplinkHost)
             TextField("HomeChat address", text: $urlText, prompt: Text("https://…"))
@@ -34,6 +42,8 @@ struct CompanionStatusView: View {
             if let pending = controller.status.pendingEstimate, pending > 0 {
                 LabeledContent("Waiting to send", value: "about \(pending)")
             }
+            LabeledContent("Replies", value: sendStateText)
+            LabeledContent("Last reply", value: lastSendText)
             LabeledContent("Full Disk Access", value: permissions.history.title)
             LabeledContent("Contacts names", value: controller.contacts.isAuthorized ? "Allowed" : "Off (names sent as unknown)")
         }
@@ -65,6 +75,29 @@ struct CompanionStatusView: View {
         case .offline: .orange
         case .noDatabaseAccess, .stopped: .red
         }
+    }
+
+    private var sendStateText: String {
+        switch controller.sendStatus.state {
+        case .off: "Off"
+        case .paused: "Paused"
+        case .notConfigured: "Not set up"
+        case .waiting: "Waiting"
+        case .sending: "Sending"
+        case .offline(let retryIn): "Mac offline, retrying in \(Int(retryIn.rounded(.up))) s"
+        case .stopped(let reason): "Stopped: \(reason)"
+        }
+    }
+
+    private var lastSendText: String {
+        guard let last = controller.sendStatus.last else { return "None in the last 7 days" }
+        let ago = RelativeDateTimeFormatter().localizedString(for: last.at, relativeTo: Date())
+        let outcome = switch last.outcome {
+        case .sent: "sent"
+        case .notSent: "not sent"
+        case .ambiguous: "may or may not have sent"
+        }
+        return "\(outcome), \(ago)"
     }
 
     private var lastUplinkText: String {
