@@ -1,8 +1,8 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-11 21:20 ET
+**Updated:** 2026-11-11 22:05 ET
 **At:** The Mac runs the reader-hardening build (`2d037cc`, installed 2026-11-10 22:06 ET) and reads Up to date; acceptance checks 1–4 passed on `2bcc8ad`; checks 5–8 not run on either build (no test contact free).
-**Next:** Phase 3 Mac Tasks 1–9 (approved plan, built and tested on fakes); in parallel when possible: Mac checks 5–8 plus a flag-and-clear check (needs a test contact), HomeChat PR D and HomeChat's phase 3 send half in `homechat-bot`.
+**Next:** HomeChat's phase 3 send half in `homechat-bot` (routes, queue, `N yes` / `N edit:`, against the contract's "Sends (phase 3)"), then phase 3 Mac acceptance A–G with a test contact and Alex's yes per send. Also open: Mac checks 5–8 plus a flag-and-clear check, and HomeChat PR D.
 **Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger (PR B) live; update and replies (PR C) merged in `homechat-bot`; desk items (PR D) not built.
 **Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag (now: uplink live) · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
@@ -13,7 +13,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
 - 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — now (uplink and flagger live; update in review; desk next)
 - 2 Calendar — free or clash for texted dates, add on yes — next
-- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — next
+- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — Mac side built on fakes (not installed, switch off by default); HomeChat side not started
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
@@ -21,7 +21,8 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - "msgblast iMessage.app" (build `2d037cc`, installed 2026-11-10 22:06 ET; the `2bcc8ad` copy is kept outside the repo for rollback) on the MacBook, address and token saved, status Up to date (Alex's reading).
 
 ## QUEUED
-- Phase 3 Mac build per `docs/superpowers/plans/2026-11-11-phase3-mac-approved-replies.md` (approved 2026-11-11), executed inline. Acceptance B–F waits on HomeChat's send half (routes, queue, `N yes` / `N edit:`), which isn't planned in `homechat-bot` yet.
+- HomeChat's phase 3 send half in `homechat-bot`: not planned yet. Phase 3 Mac acceptance (`docs/superpowers/runbooks/phase3-mac-acceptance.md`, checks A–G) waits on it.
+- Install a build from `main` after the phase 3 merge; until acceptance, keep "Send approved replies" off.
 - `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
 - Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip) on build `2d037cc`: not run, waiting for a free test contact. Run them with one question-shaped text so the same run checks a flag on Alex's phone and its clear on his reply.
 
@@ -35,6 +36,8 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - None. Terminal keeps Full Disk Access and Automation → Messages for now, by Alex's choice (2026-11-09), in case a Terminal step is needed again.
 
 ## DONE
+- 2026-11-11: phase 3 Mac side (plan Tasks 1–10) on `phase3/mac-sends`: send contract fixed, wire models, rules, a fixed argv AppleScript and runner, identity and read-back queries, outcome decision, no-text send ledger with an exclusive lock, sends client, executor, Settings switch (off by default), runbook. Send-safety review: 0 Critical, 3 Important fixed test-first, 6 minors deferred (LOG). Proven only on synthetic fixtures and fakes; no real send from the fork app.
+- 2026-11-11: PR #22 merged (`97f28bb`): the approved phase 3 Mac plan; `main` CI green.
 - 2026-11-11: PR #21 merged (`8dfcba2`; Mac gate Python 182/0 failed, native 962/0 failed; PR and `main` CI green): Settings Save says when a token is still needed (empty field, none saved) and reads the token back after writing it, so a write that didn't stick shows an error instead of "Saved". The save logic moved into Core (`CompanionConfig.saveSettings`) with 7 unit tests on a fake token store. Not installed on the Mac; the signed app's Keychain path is unchanged and not re-checked.
 - 2026-11-10: reader hardening installed on the MacBook (build `2d037cc`) after the counts-only pre-install checks and the Mac gate passed; status reads Up to date.
 - 2026-11-10: PR #17 merged (`651f054`): reader hardening (reopen on a replaced chat.db, a visible reset stop using `sqlite_sequence`, system rows passed over, 4 MiB decode cap) plus phase 3 send notes; green full native suite on the PR. PR #18 merged (`a1ee574`): fork CI scopes the Mac job (none for docs/`.claude`-only PRs, the companion suites for companion-only PRs, the full suite otherwise and on `main`) and runs it in parallel (trial: test step 12m43s vs 20m53s, green). PR #16 merged (`411c626`): agent turn caps raised. The `main` run on `a1ee574` covers all three. Not installed on the Mac.
