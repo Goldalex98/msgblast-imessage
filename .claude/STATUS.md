@@ -1,8 +1,8 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-12 07:43 ET
+**Updated:** 2026-11-12 10:35 ET
 **At:** The Mac runs the reader-hardening build (`2d037cc`, installed 2026-11-10 22:06 ET) and reads Up to date; acceptance checks 1–4 passed on `2bcc8ad`; checks 5–8 not run on either build (no test contact free).
-**Next:** Phase 3 acceptance: install a build from `main`, deploy HomeChat's send half (its Caddy change, deploy and switch each need Alex's yes), then Mac checks A–G with a test contact and Alex's yes per send. Also open: Mac checks 5–8 plus a flag-and-clear check, and HomeChat PR D.
+**Next:** Phase 3 acceptance: install a build from `main` and turn on "Send approved replies" (HomeChat's send half is live since 2026-11-12 10:27 ET), then Mac checks A–G with a test contact and Alex's yes per send. Also open: Mac checks 5–8 plus a flag-and-clear check, and HomeChat PR D.
 **Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger (PR B) live; update and replies (PR C) merged in `homechat-bot`; desk items (PR D) not built.
 **Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag (now: uplink live) · Calendar · Replies · Duet tools
 **Project Desk:** not linked from this public repo
@@ -13,7 +13,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
 - 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — now (uplink and flagger live; update in review; desk next)
 - 2 Calendar — free or clash for texted dates, add on yes — next
-- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — Mac side merged (PR #23, not installed, switch off); HomeChat side merged in `homechat-bot` (#277, not deployed, switch off); acceptance not run
+- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — Mac side merged (PR #23, not installed, switch off); HomeChat side live (`homechat-bot` #277, #279, #280; switch on 2026-11-12); acceptance not run
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
@@ -21,7 +21,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - "msgblast iMessage.app" (build `2d037cc`, installed 2026-11-10 22:06 ET; the `2bcc8ad` copy is kept outside the repo for rollback) on the MacBook, address and token saved, status Up to date (Alex's reading).
 
 ## QUEUED
-- Phase 3 acceptance (`docs/superpowers/runbooks/phase3-mac-acceptance.md`, checks A–G): waits on HomeChat's deploy (Caddy change, deploy and `HOMECHAT_IMSG_SENDS` on, each Alex's yes) and a free test contact.
+- Phase 3 acceptance (`docs/superpowers/runbooks/phase3-mac-acceptance.md`, checks A–G): HomeChat's side is live; waits on a build from `main` with the Mac switch on, a free test contact, and Alex's `yes` per send.
 - Deletion reconcile, the Mac half: send `present` daily for the last 14 days (queued on the HomeChat side; not planned here yet).
 - Install a build from `main` after the phase 3 merge; until acceptance, keep "Send approved replies" off.
 - `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).

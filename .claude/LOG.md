@@ -173,3 +173,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - It matches this repo's contract "Sends (phase 3)": a code review checked field names, times, page size, wait range and the 200/404/409 result codes against `CompanionSendModels.swift` and `UplinkClient.swift`.
 - Not verified: anything live between the Mac and HomeChat; no real send.
 - Added to QUEUED: the Mac half of the deletion reconcile (daily `present`), which HomeChat already lists.
+
+## 2026-11-12 10:35 ET — HomeChat's send half is live
+- Under Alex's approval (2026-11-12 08:11 ET), `homechat-bot` installed the two Caddy routes and deployed `5f85d7b` with `HOMECHAT_IMSG_SENDS=on` (homechat-bot #280 added the switch to compose and the deploy tool; #281 records it there).
+- Unauthenticated `GET /imsg/sends` and `POST /imsg/send-results` now answer 401 through Cloudflare. HomeChat's `imsg_sends` table is empty.
+- The MacBook has its own OVH SSH key now, so Mac sessions can run HomeChat deploys.
+- Not proven: the fork fetching a send (its switch is off and the installed build predates phase 3), any phone prompt, any real send.
