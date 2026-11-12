@@ -39,6 +39,7 @@ COMPANION_SUITES = [
     "UplinkClientTests",
     "CompanionSendModelsTests",
     "CompanionSendRulesTests",
+    "CompanionSendScriptTests",
 ]
 
 
