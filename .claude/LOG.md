@@ -179,3 +179,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Unauthenticated `GET /imsg/sends` and `POST /imsg/send-results` now answer 401 through Cloudflare. HomeChat's `imsg_sends` table is empty.
 - The MacBook has its own OVH SSH key now, so Mac sessions can run HomeChat deploys.
 - Not proven: the fork fetching a send (its switch is off and the installed build predates phase 3), any phone prompt, any real send.
+
+## 2026-11-12 12:00 ET — Phase 3 build installed; the Keychain prompt stops uplink
+- Built `a128e1b` with `companion/build_fork_app.py`: codesign verify ok, designated requirement equal to the installed copy's. Installed at ~10:57 ET; the old copy is in `build/rollback-20261112/`. "Send approved replies" is off.
+- Uplink then stopped. The app has `chat.db` open, but HomeChat's `last_seen_ts` stopped moving, and `SecurityAgent` is up: a Keychain dialog is waiting. The token item's partition is the build's `cdhash`, so each self-signed rebuild prompts again. I installed while Alex was remote; that was a mistake, and the new rule is to never reinstall while he can't reach the Mac.
+- Research (2026-11-12, advice only, untested): a free Apple ID "Apple Development" certificate should give a stable `teamid:` partition (Apple's securityd `clientid.cpp`). Data protection keychain access groups need a profile, so they're out. Alex chose the free route for his next time at the Mac (QUEUED).
+- Not run: any acceptance check A–G.
