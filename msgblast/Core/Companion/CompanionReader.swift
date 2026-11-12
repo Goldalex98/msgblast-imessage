@@ -280,3 +280,77 @@ public final class CompanionReader {
         return cleaned.isEmpty ? nil : cleaned
     }
 }
+
+// MARK: - Phase 3 sends: identity and read-back
+
+public struct CompanionSendIdentity: Equatable, Sendable {
+    public let service: String
+    public let kind: CompanionThread.Kind
+    /// `handle.id` as stored, the values passed to the send script.
+    public let handles: [String]
+    public let participantsFingerprint: String
+}
+
+public struct CompanionOutgoingRow: Equatable, Sendable {
+    public let rowID: Int64
+    public let guid: String
+    /// `text`, else the decoded `attributedBody`; exact, never trimmed or scrubbed. Kept in memory only.
+    public let body: String?
+    public let error: Int
+    public let isSent: Bool
+}
+
+extension CompanionReader {
+    private static let sendColumns: [String: Set<String>] = ["chat": ["service_name"], "message": ["error", "is_sent"]]
+
+    /// Checked only by the send methods, so a schema without them never stops phase 1's reading.
+    private func requireSendColumns() throws(CompanionReaderError) {
+        for (table, columns) in Self.sendColumns.sorted(by: { $0.key < $1.key }) {
+            var present = Set<String>()
+            try each("PRAGMA table_info(\(table))") { present.insert(Self.text($0, 1) ?? "") }
+            let missing = columns.subtracting(present)
+            guard missing.isEmpty else {
+                throw .unsupportedSchema("\(table): \(missing.sorted().joined(separator: ","))")
+            }
+        }
+    }
+
+    public func sendIdentity(chatGUID: String) throws(CompanionReaderError) -> CompanionSendIdentity? {
+        try requireSendColumns()
+        var service: String?
+        try each("SELECT COALESCE(service_name, '') FROM chat WHERE guid = ? ORDER BY ROWID LIMIT 1",
+                 [.text(chatGUID)]) { service = Self.text($0, 0) ?? "" }
+        guard let service, let thread = try threads(guids: [chatGUID]).first else { return nil }
+        return CompanionSendIdentity(service: service, kind: thread.kind, handles: thread.participants.map(\.handle),
+                                     participantsFingerprint: thread.participantsFingerprint)
+    }
+
+    /// 0 when the chat has no rows (or doesn't exist).
+    public func maxRowID(chatGUID: String) throws(CompanionReaderError) -> Int64 {
+        var result: Int64 = 0
+        try each("""
+            SELECT COALESCE(MAX(cmj.message_id), 0) FROM chat_message_join cmj JOIN chat c ON c.ROWID = cmj.chat_id
+            WHERE c.guid = ?
+            """, [.text(chatGUID)]) { result = sqlite3_column_int64($0, 0) }
+        return result
+    }
+
+    /// Alex's rows in that chat with ROWID strictly above `rowID`, oldest first.
+    public func outgoingRows(chatGUID: String, after rowID: Int64) throws(CompanionReaderError) -> [CompanionOutgoingRow] {
+        try requireSendColumns()
+        let poisoned = loadPoisoned()
+        var raw: [(rowID: Int64, guid: String, text: String?, blob: Data?, error: Int, isSent: Bool)] = []
+        try each("""
+            SELECT DISTINCT m.ROWID, m.guid, m.text, m.attributedBody, COALESCE(m.error, 0), COALESCE(m.is_sent, 0)
+            FROM message m JOIN chat_message_join cmj ON cmj.message_id = m.ROWID JOIN chat c ON c.ROWID = cmj.chat_id
+            WHERE c.guid = ? AND m.is_from_me = 1 AND m.ROWID > ? ORDER BY m.ROWID
+            """, [.text(chatGUID), .int(rowID)]) { s in
+            raw.append((sqlite3_column_int64(s, 0), Self.text(s, 1) ?? "", Self.text(s, 2), Self.blob(s, 3),
+                        Int(sqlite3_column_int64(s, 4)), sqlite3_column_int64(s, 5) != 0))
+        }
+        return raw.map { row in
+            let body = (row.text?.isEmpty == false) ? row.text : decode(row.blob, rowid: row.rowID, poisoned: poisoned)
+            return CompanionOutgoingRow(rowID: row.rowID, guid: row.guid, body: body, error: row.error, isSent: row.isSent)
+        }
+    }
+}

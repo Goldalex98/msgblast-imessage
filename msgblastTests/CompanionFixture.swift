@@ -6,18 +6,23 @@ import XCTest
 final class CompanionFixture {
     let url: URL
     private var db: OpaquePointer?
+    private let sendColumns: Bool
 
-    init() throws {
+    /// `sendColumns: false` leaves out the columns only phase 3's send read-back uses.
+    init(sendColumns: Bool = true) throws {
         url = FileManager.default.temporaryDirectory.appendingPathComponent("companion-\(UUID().uuidString).db")
         guard sqlite3_open(url.path, &db) == SQLITE_OK else { throw NSError(domain: "fixture", code: 1) }
+        self.sendColumns = sendColumns
+        let chatSend = sendColumns ? ", service_name TEXT DEFAULT 'iMessage'" : ""
+        let messageSend = sendColumns ? ", error INTEGER DEFAULT 0, is_sent INTEGER DEFAULT 0, is_delivered INTEGER DEFAULT 0" : ""
         try exec("""
-        CREATE TABLE chat(ROWID INTEGER PRIMARY KEY, guid TEXT, style INTEGER, display_name TEXT);
+        CREATE TABLE chat(ROWID INTEGER PRIMARY KEY, guid TEXT, style INTEGER, display_name TEXT\(chatSend));
         CREATE TABLE handle(ROWID INTEGER PRIMARY KEY, id TEXT);
         CREATE TABLE chat_handle_join(chat_id INTEGER, handle_id INTEGER);
         CREATE TABLE chat_message_join(chat_id INTEGER, message_id INTEGER);
         CREATE TABLE message(ROWID INTEGER PRIMARY KEY AUTOINCREMENT, guid TEXT, text TEXT, attributedBody BLOB, date INTEGER,
             is_from_me INTEGER, handle_id INTEGER, associated_message_type INTEGER, thread_originator_guid TEXT,
-            cache_has_attachments INTEGER, item_type INTEGER DEFAULT 0);
+            cache_has_attachments INTEGER, item_type INTEGER DEFAULT 0\(messageSend));
         CREATE TABLE attachment(ROWID INTEGER PRIMARY KEY, guid TEXT, filename TEXT);
         CREATE TABLE message_attachment_join(message_id INTEGER, attachment_id INTEGER);
         """)
@@ -36,8 +41,13 @@ final class CompanionFixture {
 
     /// Style 43 is a group, 45 a 1:1. Returns the chat ROWID.
     @discardableResult
-    func addChat(guid: String, style: Int, displayName: String?, handles: [String]) throws -> Int64 {
-        try run("INSERT INTO chat(guid, style, display_name) VALUES(?, ?, ?)", [guid, style, displayName])
+    func addChat(guid: String, style: Int, displayName: String?, handles: [String], service: String = "iMessage") throws -> Int64 {
+        if sendColumns {
+            try run("INSERT INTO chat(guid, style, display_name, service_name) VALUES(?, ?, ?, ?)",
+                    [guid, style, displayName, service])
+        } else {
+            try run("INSERT INTO chat(guid, style, display_name) VALUES(?, ?, ?)", [guid, style, displayName])
+        }
         let chat = sqlite3_last_insert_rowid(db)
         for handle in handles {
             try run("INSERT INTO chat_handle_join(chat_id, handle_id) VALUES(?, ?)", [chat, try handleRowID(handle)])
@@ -49,7 +59,8 @@ final class CompanionFixture {
     @discardableResult
     func addMessage(chats: [Int64], guid: String = UUID().uuidString, text: String? = nil, attributedBody: Data? = nil,
                     date: Date = Date(), fromMe: Bool = false, handle: String? = nil, associatedType: Int = 0,
-                    threadOriginator: String? = nil, attachments: Int = 0, itemType: Int = 0) throws -> Int64 {
+                    threadOriginator: String? = nil, attachments: Int = 0, itemType: Int = 0, error: Int = 0,
+                    isSent: Bool = false) throws -> Int64 {
         let handleID: Int64 = try handle.map(handleRowID) ?? 0
         let nanos = Int64(date.timeIntervalSinceReferenceDate * 1e9)
         try run("""
@@ -58,6 +69,9 @@ final class CompanionFixture {
             """, [guid, text, attributedBody, nanos, fromMe ? 1 : 0, handleID, associatedType, threadOriginator,
                   attachments > 0 ? 1 : 0, itemType])
         let message = sqlite3_last_insert_rowid(db)
+        if sendColumns {
+            try run("UPDATE message SET error = ?, is_sent = ? WHERE ROWID = ?", [error, isSent ? 1 : 0, message])
+        }
         for chat in chats { try run("INSERT INTO chat_message_join(chat_id, message_id) VALUES(?, ?)", [chat, message]) }
         for index in 0..<attachments {
             try run("INSERT INTO attachment(guid, filename) VALUES(?, ?)", ["att-\(message)-\(index)", "~/fixture.bin"])
