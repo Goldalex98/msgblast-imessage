@@ -9,12 +9,19 @@ public enum CompanionSendDecision: Equatable, Sendable {
 
     public static func decide(script: ScriptResult, rows: [CompanionOutgoingRow], text: String,
                               deadlinePassed: Bool) -> CompanionSendDecision {
+        decide(script: script, rows: rows, deadlinePassed: deadlinePassed) { $0.body == text }
+    }
+
+    /// `isMatch` says whether a row carries the approved text. Recovery matches by hash, since the ledger holds
+    /// no text.
+    public static func decide(script: ScriptResult, rows: [CompanionOutgoingRow], deadlinePassed: Bool,
+                              isMatch: (CompanionOutgoingRow) -> Bool) -> CompanionSendDecision {
         switch script {
         case .notSubmitted(code: -1743): return .final(.notSent, .automationDenied, anchorGUID: nil)
         case .notSubmitted, .failedToStart: return .final(.notSent, .scriptRefused, anchorGUID: nil)
         default: break
         }
-        let matches = rows.filter { $0.body == text }
+        let matches = rows.filter(isMatch)
         if matches.count > 1 { return .final(.ambiguous, .multipleMatches, anchorGUID: nil) }
         if let match = matches.first {
             if match.error != 0 { return .final(.notSent, .messagesError, anchorGUID: match.guid) }

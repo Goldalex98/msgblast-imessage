@@ -87,6 +87,11 @@ public final class CompanionSendLedger: @unchecked Sendable {
 
     public func unreported() -> [SendRecord] { all().filter { $0.state == .finished && $0.reportedAt == nil } }
 
+    /// Finished records whose `finishedAt` is at or after `since`, oldest first.
+    public func finished(since: Date) -> [SendRecord] {
+        all().filter { $0.state == .finished && ($0.finishedAt ?? .distantPast) >= since }
+    }
+
     public func attempts(since: Date) -> Int { all().filter { ($0.dispatchedAt ?? .distantPast) >= since }.count }
 
     /// Deletes reported records that finished before `finishedBefore`; keeps everything else.

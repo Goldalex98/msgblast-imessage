@@ -54,6 +54,31 @@ final class CompanionConfigTests: XCTestCase {
         XCTAssertTrue(url.path.hasSuffix("/Library/Application Support/msgblast-iMessage/companion.json"), url.path)
     }
 
+    // MARK: Phase 3 sends switch
+
+    func test_sendsEnabledDefaultsOffAndOldFilesLoad() throws {
+        XCTAssertFalse(CompanionConfig().sendsEnabled)
+        let url = folder.appendingPathComponent("companion.json")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data(#"{"device_id": "mac-0123abcd", "paused": true, "cursor": 77, "uplink_url": "https://home.example"}"#.utf8)
+            .write(to: url)
+        let config = CompanionConfig.load(from: url)
+        XCTAssertFalse(config.sendsEnabled)
+        XCTAssertEqual(config.deviceID, "mac-0123abcd")
+        XCTAssertEqual(config.cursor, 77)
+        XCTAssertTrue(config.paused)
+        XCTAssertEqual(config.uplinkURL?.host, "home.example")
+    }
+
+    func test_sendsEnabledRoundTrip() throws {
+        let url = folder.appendingPathComponent("companion.json")
+        var config = CompanionConfig()
+        config.sendsEnabled = true
+        try config.save(to: url)
+        XCTAssertTrue(CompanionConfig.load(from: url).sendsEnabled)
+        XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).contains("\"sends_enabled\""))
+    }
+
     // MARK: Settings save (the Settings section's Save button)
 
     private var configURL: URL { folder.appendingPathComponent("companion.json") }
