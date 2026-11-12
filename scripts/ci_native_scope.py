@@ -37,6 +37,7 @@ COMPANION_SUITES = [
     "CompanionServiceTests",
     "ContactNameResolverTests",
     "UplinkClientTests",
+    "CompanionSendModelsTests",
 ]
 
 

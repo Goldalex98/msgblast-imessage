@@ -86,12 +86,86 @@
 - **Order:** one batch at a time, in rising `cursor` order.
 - **Limits:** ≤ 200 messages per batch; body ≤ 1 MB. The server may reject larger with `413`.
 
-## Reserved for phase 3 (shape only)
+## Sends (phase 3)
 
-- `GET /imsg/sends?wait=25`: long-poll for approved sends for this device. Each carries `{send_id, thread_guid, participants_fingerprint, text, approved_at, expires_at}`.
-- `POST /imsg/send-results`: body `{send_id, outcome, anchor_guid?, detail}`, where `outcome` is `sent`, `not_sent` or `ambiguous`. The same body gives `200`; a different body for the same `send_id` gives `409`.
+Fixed by `docs/superpowers/plans/2026-11-11-phase3-mac-approved-replies.md` (Task 1). One approval sends one message (design §5.5). The Mac fetches only while Alex has "Send approved replies" on and the companion isn't paused.
 
-These are fixed by the phase 3 plan, not here.
+### `GET /imsg/sends?wait=25`
+
+A long-poll: HomeChat holds the request up to `wait` seconds (at most 25) and answers as soon as a send is ready.
+
+```json
+{
+  "sends": [
+    {
+      "send_id": "snd-0001",
+      "thread_guid": "iMessage;-;+15555550100",
+      "participants_fingerprint": "6b3a…",
+      "text": "Sounds good, see you at 6",
+      "text_sha256": "<lowercase hex SHA-256 of the UTF-8 text>",
+      "approved_at": "2026-11-12T14:00:00Z",
+      "expires_at": "2026-11-12T14:10:00Z"
+    }
+  ]
+}
+```
+
+| Field | Meaning |
+|---|---|
+| `send_id` | Issued by HomeChat, unique, never re-issued. The Mac never dispatches a `send_id` twice, whatever HomeChat sends back. |
+| `thread_guid` | An existing thread the Mac uplinked. |
+| `participants_fingerprint` | As in `threads[]` above, taken when the item was created. The Mac refuses the send if the thread's fingerprint is different now. |
+| `text` | The exact approved text, sent as is (not trimmed). |
+| `text_sha256` | Computed by HomeChat from its stored approved text when it issues the send. The Mac recomputes it from `text` and refuses on a mismatch. |
+| `approved_at`, `expires_at` | `expires_at` is at most 10 minutes after `approved_at`. The Mac refuses a send at or after `expires_at`, checked at fetch and again just before sending. |
+
+Only unexpired sends without a stored result, for the token's own device, oldest first, 0 to 5 per page.
+
+| Status | The Mac does |
+|---|---|
+| `200` | Handles each send in order, one at a time. More than 5 is a bad response. |
+| `401` | Stops until the token or URL changes. |
+| `429`, `5xx`, no response | Retries: 5 s, doubling, at most 300 s. |
+| anything else | Stops and shows the status. |
+
+### `POST /imsg/send-results`
+
+```json
+{"send_id": "snd-0001", "outcome": "sent", "anchor_guid": "<guid of the sent chat.db row>", "text_sha256": "<the Mac's own hash of the text>", "detail": "confirmed"}
+```
+
+`anchor_guid` is left out when there is none. `outcome` is `sent`, `not_sent` or `ambiguous`. HomeChat treats every outcome as final: `ambiguous` means "may or may not have sent: check Messages" and is never queued again. `detail` is always one of these codes, never free text:
+
+| `detail` | Outcome | Meaning |
+|---|---|---|
+| `confirmed` | sent | Exactly one new outgoing row with the exact text, marked sent with no error. |
+| `recovered_after_restart` | sent or ambiguous | The app stopped mid-send; on relaunch the read-back found exactly one confirmed match (`sent`) or not (`ambiguous`). Never re-sent. |
+| `expired` | not_sent | At or after `expires_at`. |
+| `approval_too_long` | not_sent | `expires_at` more than 10 minutes after `approved_at`. |
+| `hash_mismatch` | not_sent | `text_sha256` doesn't match `text`. |
+| `text_rules` | not_sent | Empty after trimming, over 4000 characters, or a control character other than tab, LF, CR. |
+| `daily_cap` | not_sent | 30 send attempts in the last 24 h on this Mac. |
+| `paused`, `sends_off` | not_sent | Paused, or sends switched off, between fetch and send. |
+| `thread_missing` | not_sent | The thread isn't in `chat.db`. |
+| `thread_changed` | not_sent | Its participant fingerprint changed. |
+| `not_imessage` | not_sent | The thread isn't iMessage (SMS and RCS are refused). |
+| `bad_target` | not_sent | A thread GUID or handle the Mac won't pass to AppleScript. |
+| `automation_denied` | not_sent | macOS Automation permission for Messages is off. |
+| `script_refused` | not_sent | Messages' identity check refused before sending, or the script didn't start. |
+| `messages_error` | not_sent | The new row exists but Messages marked it failed. |
+| `no_readback` | ambiguous | The script reported the send but no matching row appeared within 20 s. |
+| `multiple_matches` | ambiguous | More than one new outgoing row with the exact text. |
+| `not_confirmed` | ambiguous | One matching row, not marked sent within 20 s. |
+| `script_uncertain` | ambiguous | The script timed out or failed after it may have sent, and no confirmed row appeared. |
+| `database_unreadable` | ambiguous | `chat.db` couldn't be read after the send. |
+
+| Status | The Mac does |
+|---|---|
+| `200` | Marks the result reported. The same body again also gets `200`. |
+| `404` | Unknown `send_id`: marks it reported and shows it. |
+| `409` | A different result is already stored for this `send_id`: stops sending and shows it. |
+| `401` | Stops until the token or URL changes. |
+| `429`, `5xx`, no response | Retries: 5 s, doubling, at most 300 s. |
 
 ## Known gaps (phase 1)
 
