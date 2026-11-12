@@ -132,3 +132,8 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - The first query attempt failed with "authorization denied": it ran from a shell without Full Disk Access, not Terminal.app. Nothing was read.
 - Built with `companion/build_fork_app.py` into its own folder and checked that the designated requirement matched before installing, so the grants carried over. The old copy was moved aside, not deleted.
 - Alex chose not to run checks 5–8 tonight (no test contact free). They stay recorded as not run, not as passed.
+
+## 2026-11-11 20:50 ET: Settings Save no longer hides a missing token
+- The fix for the first-save confusion on 2026-11-09. Save with an empty token field and no token saved now keeps the address and says a token is still needed. After a token write, the token is read back; a write that reports success but can't be read back says so.
+- The save logic moved from the app's `CompanionController` into Core, so unit tests can reach it with a fake token store. A Keychain write failure now still updates the shown host, since the address was already saved.
+- Not proven: why the first save on 2026-11-09 failed. This makes such a failure visible; it doesn't explain it.
