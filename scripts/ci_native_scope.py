@@ -41,6 +41,7 @@ COMPANION_SUITES = [
     "CompanionSendRulesTests",
     "CompanionSendScriptTests",
     "CompanionSendReadTests",
+    "CompanionSendDecisionTests",
 ]
 
 
