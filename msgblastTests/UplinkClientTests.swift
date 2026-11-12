@@ -151,3 +151,90 @@ final class UplinkStub: URLProtocol, @unchecked Sendable {
 
     override func stopLoading() {}
 }
+
+// MARK: - Phase 3 sends
+
+extension UplinkClientTests {
+    private func sendsOutcome(status: Int, body: String = "{}") async -> Result<[ApprovedSend], SendsError> {
+        UplinkStub.respond(status: status, body: body)
+        do throws(SendsError) { return .success(try await client().fetchSends(wait: 25)) } catch { return .failure(error) }
+    }
+
+    private func resultOutcome(status: Int) async -> Result<Void, SendsError> {
+        UplinkStub.respond(status: status, body: "{}")
+        let result = SendResult(sendID: "snd-1", outcome: .sent, anchorGUID: "g", textSHA256: "h", detail: .confirmed)
+        do throws(SendsError) { try await client().postResult(result); return .success(()) } catch { return .failure(error) }
+    }
+
+    private func sendJSON(_ id: String) -> String {
+        #"{"send_id": "\#(id)", "thread_guid": "iMessage;-;+15555550100", "participants_fingerprint": "fp", "text": "hi", "text_sha256": "h", "approved_at": "2026-11-12T14:00:00Z", "expires_at": "2026-11-12T14:10:00Z"}"#
+    }
+
+    func test_fetchSendsRequestShape() async throws {
+        UplinkStub.respond(status: 200, body: #"{"sends": []}"#)
+        _ = try await client().fetchSends(wait: 25)
+        let request = try XCTUnwrap(UplinkStub.requests.first)
+        XCTAssertEqual(request.httpMethod, "GET")
+        XCTAssertEqual(request.url?.path, "/imsg/sends")
+        XCTAssertEqual(request.url?.query, "wait=25")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token")
+        XCTAssertEqual(request.timeoutInterval, 40)
+    }
+
+    func test_fetchSendsEmptyAndPage() async throws {
+        guard case .success(let none) = await sendsOutcome(status: 200, body: #"{"sends": []}"#) else { return XCTFail() }
+        XCTAssertTrue(none.isEmpty)
+        let page = #"{"sends": [\#(sendJSON("a")), \#(sendJSON("b"))]}"#
+        guard case .success(let two) = await sendsOutcome(status: 200, body: page) else { return XCTFail() }
+        XCTAssertEqual(two.map(\.sendID), ["a", "b"])
+    }
+
+    func test_fetchSendsMoreThanFiveIsBadResponse() async {
+        let six = (1...6).map { sendJSON("s\($0)") }.joined(separator: ",")
+        guard case .failure(let error) = await sendsOutcome(status: 200, body: #"{"sends": [\#(six)]}"#) else { return XCTFail() }
+        XCTAssertEqual(error, .badResponse)
+        guard case .failure(.badResponse) = await sendsOutcome(status: 200, body: "not json") else { return XCTFail() }
+    }
+
+    func test_postResultBody() async throws {
+        UplinkStub.respond(status: 200, body: "{}")
+        let result = SendResult(sendID: "snd-1", outcome: .ambiguous, anchorGUID: nil, textSHA256: "h", detail: .noReadback)
+        try await client().postResult(result)
+        let request = try XCTUnwrap(UplinkStub.requests.first)
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.url?.path, "/imsg/send-results")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-token")
+        XCTAssertEqual(try CompanionJSON.decoder.decode(SendResult.self, from: XCTUnwrap(request.httpBody)), result)
+    }
+
+    func test_sendsStatusMapping() async {
+        let fetchCases: [(Int, SendsError)] = [(401, .unauthorized), (404, .rejected(404)), (409, .rejected(409)),
+                                               (429, .retryable(429)), (500, .retryable(500)), (302, .rejected(302))]
+        for (status, expected) in fetchCases {
+            guard case .failure(let error) = await sendsOutcome(status: status) else { XCTFail("\(status)"); continue }
+            XCTAssertEqual(error, expected, "fetch \(status)")
+        }
+        let resultCases: [(Int, SendsError)] = [(401, .unauthorized), (404, .unknownSend), (409, .conflict),
+                                                (429, .retryable(429)), (503, .retryable(503)), (302, .rejected(302)),
+                                                (422, .rejected(422))]
+        for (status, expected) in resultCases {
+            guard case .failure(let error) = await resultOutcome(status: status) else { XCTFail("\(status)"); continue }
+            XCTAssertEqual(error, expected, "result \(status)")
+        }
+        guard case .success = await resultOutcome(status: 200) else { return XCTFail() }
+    }
+
+    func test_sendsTransportErrorIsRetryable() async {
+        UplinkStub.fail(URLError(.notConnectedToInternet))
+        do throws(SendsError) { _ = try await client().fetchSends(wait: 25); XCTFail() } catch { XCTAssertEqual(error, .retryable(nil)) }
+    }
+
+    func test_sendsHTTPBaseRefused() async {
+        let plain = client(URL(string: "http://uplink-test.invalid")!)
+        do throws(SendsError) { _ = try await plain.fetchSends(wait: 25); XCTFail() } catch { XCTAssertEqual(error, .notHTTPS) }
+        let result = SendResult(sendID: "s", outcome: .sent, anchorGUID: nil, textSHA256: "h", detail: .confirmed)
+        do throws(SendsError) { try await plain.postResult(result); XCTFail() } catch { XCTAssertEqual(error, .notHTTPS) }
+        XCTAssertTrue(UplinkStub.requests.isEmpty)
+    }
+}
