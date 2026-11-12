@@ -137,3 +137,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - The fix for the first-save confusion on 2026-11-09. Save with an empty token field and no token saved now keeps the address and says a token is still needed. After a token write, the token is read back; a write that reports success but can't be read back says so.
 - The save logic moved from the app's `CompanionController` into Core, so unit tests can reach it with a fake token store. A Keychain write failure now still updates the shown host, since the address was already saved.
 - Not proven: why the first save on 2026-11-09 failed. This makes such a failure visible; it doesn't explain it.
+
+## 2026-11-11 21:20 ET: phase 3 Mac plan approved
+- Plan: `docs/superpowers/plans/2026-11-11-phase3-mac-approved-replies.md`, 10 tasks, Mac side only. It fixes the two send routes in the uplink contract (Task 1); HomeChat builds its half against that.
+- Alex's answers to the send-notes questions: a send left `in_progress` by a crash resolves to `sent` only on exactly one exact matching row after the baseline with `error` = 0 and `is_sent` = 1, otherwise `ambiguous`; read-back waits 20 s; the Mac's audit keeps hash and length only; iMessage 1:1 and group threads. Not asked, defaulted: `sent` is enough, `is_delivered` isn't read.
+- Choices made in the plan: a `send_id` with any ledger record is never dispatched again; sends are off until a new Settings switch is turned on; the AppleScript is fixed and takes everything as `argv`; recovery after a crash never reports `not_sent`.
+- Execution: inline, per Alex's default; send-safety-reviewer on the whole branch before merge.
