@@ -7,13 +7,27 @@ public struct CompanionConfig: Codable, Sendable, Equatable {
     public var paused: Bool
     /// The highest chat.db ROWID HomeChat has accepted; nil until the first batch is accepted.
     public var cursor: Int64?
+    /// Phase 3: fetch and send approved replies. Off until Alex turns it on; files from before phase 3 load as off.
+    public var sendsEnabled: Bool
 
     public init(uplinkURL: URL? = nil, deviceID: String = CompanionConfig.newDeviceID(), paused: Bool = false,
-                cursor: Int64? = nil) {
+                cursor: Int64? = nil, sendsEnabled: Bool = false) {
         self.uplinkURL = uplinkURL; self.deviceID = deviceID; self.paused = paused; self.cursor = cursor
+        self.sendsEnabled = sendsEnabled
     }
 
-    enum CodingKeys: String, CodingKey { case uplinkURL = "uplink_url", deviceID = "device_id", paused, cursor }
+    enum CodingKeys: String, CodingKey {
+        case uplinkURL = "uplink_url", deviceID = "device_id", paused, cursor, sendsEnabled = "sends_enabled"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        uplinkURL = try c.decodeIfPresent(URL.self, forKey: .uplinkURL)
+        deviceID = try c.decode(String.self, forKey: .deviceID)
+        paused = try c.decode(Bool.self, forKey: .paused)
+        cursor = try c.decodeIfPresent(Int64.self, forKey: .cursor)
+        sendsEnabled = try c.decodeIfPresent(Bool.self, forKey: .sendsEnabled) ?? false
+    }
 
     public static func newDeviceID() -> String {
         "mac-" + (0..<4).map { _ in String(format: "%02x", UInt8.random(in: 0...255)) }.joined()

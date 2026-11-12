@@ -143,3 +143,23 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Alex's answers to the send-notes questions: a send left `in_progress` by a crash resolves to `sent` only on exactly one exact matching row after the baseline with `error` = 0 and `is_sent` = 1, otherwise `ambiguous`; read-back waits 20 s; the Mac's audit keeps hash and length only; iMessage 1:1 and group threads. Not asked, defaulted: `sent` is enough, `is_delivered` isn't read.
 - Choices made in the plan: a `send_id` with any ledger record is never dispatched again; sends are off until a new Settings switch is turned on; the AppleScript is fixed and takes everything as `argv`; recovery after a crash never reports `not_sent`.
 - Execution: inline, per Alex's default; send-safety-reviewer on the whole branch before merge.
+
+## 2026-11-11 22:05 ET: phase 3 Mac side built
+- All ten plan tasks ran inline and test-first on synthetic `chat.db` fixtures and fakes. No real send, and nothing touched Messages: the only `osascript` calls in tests run an echo script.
+- Rulings beyond the plan are in the PR description. The main ones:
+  - The `sends_enabled` field moved into Task 8.
+  - Recovery matches rows by text hash, because the ledger has no text.
+  - If chat.db can't be read before dispatch, nothing is recorded, and HomeChat re-delivers the send until it expires.
+  - A missing `service_name` is refused rather than falling back to the handle's service.
+- The send-safety review found 0 Critical and 3 Important issues, all fixed test-first:
+  - an exclusive ledger lock, so a second copy of the app can't finish another copy's sends;
+  - a confirmed match must survive two more polls before it counts as sent, so a same-text row from Alex's phone reads as ambiguous;
+  - `osascript` runs with a UTF-8 locale.
+- Six minors are deferred. All of them fail safe:
+  - a misleading stop reason when a ledger write fails;
+  - the folder mode is set only when the folder is created;
+  - a swallowed final ledger write;
+  - a failed row treated as final;
+  - no log line for a redelivered in-progress send;
+  - the plan doesn't cite spike (c).
+- Non-ASCII text through argv is proven only in the test runner's locale. Runbook check B sends an accent and an emoji.

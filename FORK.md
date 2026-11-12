@@ -25,8 +25,14 @@ fork-only features here, not upstream.
   status section at the top of Settings, Contacts names, and the 2 s timer. Settings live in
   `companion.json` in the app's support folder; the token lives in the login keychain. It does
   nothing until an address and token are saved.
-- **Planned** (see the design): flagging messages waiting on a reply, and sending a reply only
-  after the owner approves its exact text (phase 3).
+- **Since 2026-11-11 (phase 3, Mac side):** sending a reply only after the owner approves its exact
+  text on the home server. `msgblast/Core/Companion/CompanionSend*.swift` fetch approved sends, check
+  them again (expiry, a hash of the text, text rules, 30 attempts a day, the same iMessage thread and
+  participants), send through a fixed AppleScript that takes the text as an argument, read the result
+  back from `chat.db` and report `sent`, `not_sent` or `ambiguous`. A send is recorded on disk (hash
+  and length only, never the text) before it runs and is never sent twice; an `ambiguous` send is never
+  retried. Off until "Send approved replies" is switched on in Settings. Flagging lives on the home
+  server.
 
 Known limits of the companion:
 
