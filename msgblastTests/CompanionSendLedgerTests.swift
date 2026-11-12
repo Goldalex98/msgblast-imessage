@@ -119,4 +119,14 @@ final class CompanionSendLedgerTests: XCTestCase {
         XCTAssertThrowsError(try ledger.begin(record("snd-x")))
         XCTAssertTrue(ledger.inProgress().isEmpty)
     }
+
+    func test_lockIsExclusiveAcrossInstances() throws {
+        var first: CompanionSendLedger? = CompanionSendLedger(folder: folder)
+        XCTAssertTrue(first?.lockExclusively() ?? false)
+        XCTAssertTrue(first?.lockExclusively() ?? false, "re-locking the same instance is fine")
+        let second = CompanionSendLedger(folder: folder)
+        XCTAssertFalse(second.lockExclusively())
+        first = nil
+        XCTAssertTrue(second.lockExclusively(), "released when the holder goes away")
+    }
 }

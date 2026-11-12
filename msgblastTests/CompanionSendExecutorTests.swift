@@ -166,6 +166,55 @@ final class CompanionSendExecutorTests: XCTestCase {
         XCTAssertEqual(uplink.results.first?.anchorGUID, "failed-row")
     }
 
+    func test_phoneRowThenMacRowIsAmbiguous() async {
+        // Alex's phone sends the same words; its row lands first and the Mac's own row a second later.
+        nonisolated(unsafe) let fixture = fixture!
+        let chat = directChat
+        runner.behaviour = { _, _ in
+            _ = try? fixture.addMessage(chats: [chat], guid: "phone-row", text: "See you at 6", fromMe: true, isSent: true)
+            return .output("SUBMITTED")
+        }
+        let clock = clock!
+        nonisolated(unsafe) var inserted = false
+        let exec = CompanionSendExecutor(
+            databasePath: fixture.url.path, configURL: configURL, ledgerFolder: ledgerFolder, tokens: FakeTokens("tok"),
+            makeUplink: { [uplink] _, _ in uplink! }, runner: runner, now: { clock.now },
+            sleep: { seconds in
+                clock.advance(seconds)
+                if !inserted {
+                    inserted = true
+                    _ = try? fixture.addMessage(chats: [chat], guid: "mac-row", text: "See you at 6", fromMe: true,
+                                                isSent: true)
+                }
+            })
+        uplink.pages = [[send()]]
+        _ = await exec.cycle()
+        XCTAssertEqual(uplink.results.first?.outcome, .ambiguous)
+        XCTAssertEqual(uplink.results.first?.detail, .multipleMatches)
+    }
+
+    func test_confirmedSendSettlesForTwoPolls() async {
+        messagesWrites()
+        uplink.pages = [[send()]]
+        let start = clock.now
+        _ = await executor().cycle()
+        XCTAssertEqual(uplink.results.first?.outcome, .sent)
+        XCTAssertEqual(clock.now.timeIntervalSince(start), 2)
+    }
+
+    func test_secondExecutorStopsWhileFirstHoldsLock() async {
+        messagesWrites()
+        uplink.pages = [[]]
+        let first = executor()
+        _ = await first.cycle()
+        uplink.pages = [[send()]]
+        let status = await executor().cycle()
+        XCTAssertEqual(status.state, .stopped(CompanionSendExecutor.anotherCopy))
+        XCTAssertTrue(runner.calls.isEmpty)
+        XCTAssertEqual(uplink.fetches, 1, "the second copy doesn't fetch")
+        _ = first
+    }
+
     // MARK: Refusals before dispatch
 
     func test_expiryRecheckedBeforeDispatch() async {

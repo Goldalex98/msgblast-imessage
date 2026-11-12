@@ -28,6 +28,8 @@ public actor CompanionSendExecutor {
     public static let scriptTimeout: TimeInterval = 35
     /// Read-back after the script returns: one poll now, then one a second for 20 s (Alex, 2026-11-11).
     public static let readbackPolls = 20
+    /// Extra polls a confirmed match must survive before it counts as sent (review finding, 2026-11-11).
+    public static let settlePolls = 2
     public static let retention: TimeInterval = 90 * 86_400
     static let ambiguousWindow: TimeInterval = 7 * 86_400
     static let initialBackoff: TimeInterval = 5
@@ -67,6 +69,7 @@ public actor CompanionSendExecutor {
         guard config.sendsEnabled else { return status(.off) }
         if config.paused { return status(.paused) }
         guard let url = config.uplinkURL, let token = tokens.read() else { return status(.notConfigured) }
+        guard ledger.lockExclusively() else { return status(.stopped(Self.anotherCopy)) }
         let key = SHA256.hash(data: Data("\(url.absoluteString)\n\(token)".utf8)).map { String(format: "%02x", $0) }.joined()
         if let stop {
             if stop.key == key { return status(.stopped(stop.reason)) }
@@ -100,6 +103,7 @@ public actor CompanionSendExecutor {
     }
 
     static let unreadable = "Can't read the Messages database"
+    public static let anotherCopy = "Another copy of the app is sending replies"
 
     // MARK: - Recovery
 
@@ -173,20 +177,32 @@ public actor CompanionSendExecutor {
         current.state = .sending
         let script = CompanionSendScript.result(of: await runner.run(source: CompanionSendScript.source,
                                                                      arguments: arguments, timeout: Self.scriptTimeout))
-        for poll in 0...Self.readbackPolls {
+        // A confirmed match is re-read for `settlePolls` more polls before it counts as sent, so a matching row
+        // from Alex's phone that lands just before the Mac's own row reads as two matches (ambiguous).
+        var confirmations = 0
+        for poll in 0...(Self.readbackPolls + Self.settlePolls) {
             if poll > 0 { await sleep(1) }
             guard let rows = try? reader.outgoingRows(chatGUID: send.threadGUID, after: baseline) else {
                 finish(&record, .ambiguous, .databaseUnreadable, anchor: nil)
                 return record
             }
             let decision = CompanionSendDecision.decide(script: script, rows: rows, text: send.text,
-                                                        deadlinePassed: poll == Self.readbackPolls)
-            if case .final(let outcome, let detail, let anchor) = decision {
+                                                        deadlinePassed: poll >= Self.readbackPolls)
+            switch decision {
+            case .final(.sent, let detail, let anchor):
+                confirmations += 1
+                if confirmations > Self.settlePolls {
+                    finish(&record, .sent, detail, anchor: anchor)
+                    return record
+                }
+            case .final(let outcome, let detail, let anchor):
                 finish(&record, outcome, detail, anchor: anchor)
                 return record
+            case .keepWaiting:
+                confirmations = 0
             }
         }
-        finish(&record, .ambiguous, .noReadback, anchor: nil)  // not reached: the last poll is always final
+        finish(&record, .ambiguous, .notConfirmed, anchor: nil)  // a match that never settled
         return record
     }
 

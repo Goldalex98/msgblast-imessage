@@ -39,8 +39,24 @@ public enum CompanionSendLedgerError: Error, Equatable { case exists, writeFaile
 /// Used only from the executor actor.
 public final class CompanionSendLedger: @unchecked Sendable {
     private let folder: URL
+    private var lockFD: Int32?
 
     public init(folder: URL) { self.folder = folder }
+
+    deinit { if let lockFD { close(lockFD) } }
+
+    /// An exclusive `flock` on `.lock` in the folder, held for this instance's life, so a second copy of the app
+    /// can't recover or finish another copy's sends. False when another instance holds it.
+    public func lockExclusively() -> Bool {
+        if lockFD != nil { return true }
+        guard (try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true,
+                                                         attributes: [.posixPermissions: 0o700])) != nil else { return false }
+        let fd = open(folder.appendingPathComponent(".lock").path, O_RDWR | O_CREAT, 0o600)
+        guard fd >= 0 else { return false }
+        guard flock(fd, LOCK_EX | LOCK_NB) == 0 else { close(fd); return false }
+        lockFD = fd
+        return true
+    }
 
     /// The file name is the hash of the server's id, so a `send_id` never becomes a path.
     private func file(_ sendID: String) -> URL { folder.appendingPathComponent(CompanionTextHash.of(sendID) + ".json") }

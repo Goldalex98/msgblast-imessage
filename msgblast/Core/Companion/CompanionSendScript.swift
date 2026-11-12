@@ -98,6 +98,7 @@ public struct OsascriptRunner: CompanionScriptRunning {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
         process.arguments = ["-"] + arguments
+        process.environment = environment(base: ProcessInfo.processInfo.environment)
         let input = Pipe(), output = Pipe(), errors = Pipe()
         process.standardInput = input; process.standardOutput = output; process.standardError = errors
         let completed = DispatchSemaphore(value: 0)
@@ -119,6 +120,14 @@ public struct OsascriptRunner: CompanionScriptRunning {
         _ = errors.fileHandleForReading.readDataToEndOfFile()
         guard process.terminationStatus == 0 else { return .exitNonZero }
         return .output(stdout.hasSuffix("\n") ? String(stdout.dropLast()) : stdout)
+    }
+
+    /// The inherited environment with a UTF-8 locale forced, so argv text is never decoded in another encoding
+    /// when the app was launched with a C or missing locale.
+    public static func environment(base: [String: String]) -> [String: String] {
+        var env = base
+        for key in ["LANG", "LC_ALL", "LC_CTYPE"] { env[key] = "en_US.UTF-8" }
+        return env
     }
 
     private static func terminate(_ process: Process, _ completed: DispatchSemaphore) {

@@ -80,6 +80,14 @@ final class CompanionSendScriptTests: XCTestCase {
         }
     }
 
+    func test_runnerForcesUTF8Locale() {
+        let env = OsascriptRunner.environment(base: ["LANG": "C", "LC_ALL": "C", "LC_CTYPE": "C", "HOME": "/h"])
+        XCTAssertEqual(env["LANG"], "en_US.UTF-8")
+        XCTAssertEqual(env["LC_ALL"], "en_US.UTF-8")
+        XCTAssertEqual(env["LC_CTYPE"], "en_US.UTF-8")
+        XCTAssertEqual(env["HOME"], "/h")
+    }
+
     func test_runnerTimesOut() async {
         let started = Date()
         let out = await OsascriptRunner().run(source: "delay 10\nreturn \"late\"", arguments: [], timeout: 1)
