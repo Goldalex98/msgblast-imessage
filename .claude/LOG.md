@@ -167,3 +167,9 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 ## 2026-11-11 22:30 ET: phase 3 Mac side merged (PR #23)
 - The first full Mac gate had 3 timeouts in upstream's timer-bound desktop-app driver tests (`DesktopAppDriverTests` ×2, `GeminiAppDriverTests` ×1). The same three passed alone in 4 s. A second full run passed (1052, 0 failed), so the timeouts are load-dependent flakes in tests the branch doesn't touch. Not fixed here.
 - Not installed on the Mac. The send switch is off by default, and nothing can be sent until HomeChat's half exists.
+
+## 2026-11-12 07:43 ET — HomeChat's phase 3 send half merged
+- In `homechat-bot`: plan #276 and code #277 merged (merge commits, CI green), status #278. Not deployed; its switch ships off.
+- It matches this repo's contract "Sends (phase 3)": a code review checked field names, times, page size, wait range and the 200/404/409 result codes against `CompanionSendModels.swift` and `UplinkClient.swift`.
+- Not verified: anything live between the Mac and HomeChat; no real send.
+- Added to QUEUED: the Mac half of the deletion reconcile (daily `present`), which HomeChat already lists.
