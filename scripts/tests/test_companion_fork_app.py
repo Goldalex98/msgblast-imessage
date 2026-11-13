@@ -89,6 +89,45 @@ def canned(identifier=BUNDLE_ID, authority="msgblast-imessage local signing",
 
 
 class SignCheckTests(unittest.TestCase):
+    def test_resign_commands_timestamp_only_when_asked(self):
+        app = Path("/out/msgblast iMessage.app")
+        commands = build_fork_app.resign_commands(app, Path("/ws/e.entitlements"), "ABCDEF0123", [], None,
+                                                  timestamp=True)
+        signs = [c for c in commands if c[:2] == ["codesign", "--force"]]
+        self.assertTrue(signs and all("--timestamp" in c for c in signs))
+        self.assertNotIn("--timestamp", commands[-1])
+
+    def test_identity_defaults_to_the_self_signed_one(self):
+        missing = Path("/nonexistent/signing-identity")
+        self.assertEqual(build_fork_app.resolve_identity({}, missing), build_fork_app.FORK_IDENTITY)
+
+    def test_identity_from_the_local_file(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "signing-identity"
+            f.write_text("  0123456789ABCDEF0123456789ABCDEF01234567\n# comment\n")
+            self.assertEqual(build_fork_app.resolve_identity({}, f), "0123456789ABCDEF0123456789ABCDEF01234567")
+            f.write_text("\n")
+            self.assertEqual(build_fork_app.resolve_identity({}, f), build_fork_app.FORK_IDENTITY)
+
+    def test_identity_env_wins_over_the_file(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "signing-identity"
+            f.write_text("FROMFILE\n")
+            env = {build_fork_app.IDENTITY_ENV: "FROMENV"}
+            self.assertEqual(build_fork_app.resolve_identity(env, f), "FROMENV")
+            self.assertEqual(build_fork_app.resolve_identity({build_fork_app.IDENTITY_ENV: " "}, f), "FROMFILE")
+
+    def test_identity_file_lives_outside_the_repo(self):
+        path = build_fork_app.IDENTITY_FILE
+        self.assertFalse(str(path).startswith(str(ROOT)))
+        self.assertEqual(path, Path.home() / ".config/msgblast-imessage/signing-identity")
+
+    def test_only_the_self_signed_identity_skips_the_timestamp(self):
+        self.assertFalse(build_fork_app.wants_timestamp(build_fork_app.FORK_IDENTITY))
+        self.assertTrue(build_fork_app.wants_timestamp("0123456789ABCDEF0123456789ABCDEF01234567"))
+
     def test_signature_facts(self):
         app = Path("/Applications/msgblast iMessage.app")
         facts = sign_check.signature_facts(app, canned())
