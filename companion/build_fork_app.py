@@ -12,11 +12,13 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
+import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import List, Mapping, Optional
+from typing import Callable, List, Mapping, Optional
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -95,10 +97,41 @@ def nested_code(app: Path) -> List[Path]:
     return found
 
 
-def identity_available(identity: str) -> bool:
-    listed = subprocess.run(["security", "find-identity", "-p", "codesigning"],
-                            capture_output=True, text=True).stdout
-    return f'"{identity}"' in listed or f" {identity} " in listed
+_LISTED = re.compile(r'^\s*\d+\)\s+([0-9A-F]{40})\s+"(.*)"\s*$')
+
+
+def identity_listed(identity: str, listing: str) -> bool:
+    """True only for a whole SHA-1 or a whole quoted name on one of the listing's identity lines."""
+    if not identity.strip():
+        return False
+    for line in listing.splitlines():
+        found = _LISTED.match(line)
+        if found and identity in (found.group(1), found.group(2)):
+            return True
+    return False
+
+
+def _find_identities(args: List[str]) -> str:
+    return subprocess.run(args, capture_output=True, text=True).stdout
+
+
+def identity_available(identity: str, runner: Callable[[List[str]], str] = _find_identities) -> bool:
+    """Valid (unexpired, trusted) code-signing identities only."""
+    return identity_listed(identity, runner(["security", "find-identity", "-v", "-p", "codesigning"]))
+
+
+def sign_or_discard(app: Path, stale_zip: Path, commands: List[List[str]],
+                    run: Callable[[List[str], Path], object]) -> None:
+    """Run the re-sign commands; if one fails, remove the ad-hoc app and its zip so no half-signed
+    build is left in the output folder, then re-raise. On success only the stale zip goes."""
+    try:
+        for command in commands:
+            run(command, app.parent)
+    except BaseException:
+        shutil.rmtree(app, ignore_errors=True)
+        stale_zip.unlink(missing_ok=True)
+        raise
+    stale_zip.unlink(missing_ok=True)  # the zip holds the ad-hoc signature, not the fork identity
 
 
 def main() -> int:
@@ -120,12 +153,9 @@ def main() -> int:
         record = build.package_variant(workspace, FORK_VARIANT, sha, output, enable_dev_telemetry=False)
         app = output / FORK_VARIANT["app_name"]
         entitlements = workspace / "msgblast/msgblastDebug.entitlements"
-        for command in resign_commands(app, entitlements, identity, nested_code(app), build.bundle_executable(app),
-                                       timestamp=wants_timestamp(identity)):
-            build.run(command, app.parent)
-    stale = output / record["zip"]
-    if stale.exists():
-        stale.unlink()  # the zip holds the ad-hoc signature, not the fork identity
+        commands = resign_commands(app, entitlements, identity, nested_code(app), build.bundle_executable(app),
+                                   timestamp=wants_timestamp(identity))
+        sign_or_discard(app, output / record["zip"], commands, build.run)
     print(f"Built {app}\nInstall: quit any running copy, then replace /Applications/{FORK_VARIANT['app_name']} with it.")
     return 0
 

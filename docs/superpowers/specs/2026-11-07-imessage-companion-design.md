@@ -279,6 +279,7 @@ A fresh builder read this design and raised 9 questions. These are settled as my
    - **Alex: no paid Apple Developer account, and he would rather not pay $99/yr** (2026-11-07).
    - So sign with a stable, local, self-signed code-signing certificate made in Keychain Access, and keep the same certificate for every build.
    - If spike (g) shows grants still reset, the free Apple ID "Personal Team" development signing in Xcode is the next try. Paying is the last resort, and Alex decides.
+   - **2026-11-12 (Alex):** move to the free Apple ID "Apple Development" identity. The self-signed builds keep Full Disk Access and Automation, but each rebuild re-prompts for the Keychain token: the item's partition is the build's `cdhash`, and only an Apple-issued identity gets a stable `teamid:` one. `build_fork_app.py` reads the identity's hash from local config (never this repo), and Apple-issued builds get `--timestamp`. Full Disk Access and Automation are granted once more for the new requirement. Paying is still the last resort.
    - Install the fork in `/Applications` under its own bundle ID, so it never replaces an installed upstream msgblast.
 5. **Phase 1 without the desk:** desk writes are the last task of phase 1.
    - If the desk-routine approval or the 4b queue slips, phase 1 may be accepted as **1a** (WhatsApp update only).

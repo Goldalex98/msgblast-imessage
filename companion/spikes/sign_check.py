@@ -43,7 +43,9 @@ def signature_facts(app: Path, runner: Runner = run_command) -> dict:
         requirement = req_out.split("designated =>", 1)[1].strip()
     return {
         "identifier_ok": f"Identifier={BUNDLE_ID}" in lines,
-        "authority_is_fork_identity": f"Authority={FORK_IDENTITY}" in lines,
+        # The self-signed identity, or (since 2026-11-12) the owner's Apple Development one; booleans only.
+        "authority_is_fork_identity": f"Authority={FORK_IDENTITY}" in lines
+        or any(line.startswith("Authority=Apple Development: ") for line in lines),
         "requirement_uses_cdhash": "cdhash" in requirement,
         "requirement_sha256": hashlib.sha256(requirement.encode()).hexdigest() if requirement else None,
     }

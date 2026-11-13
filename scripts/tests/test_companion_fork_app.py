@@ -128,6 +128,59 @@ class SignCheckTests(unittest.TestCase):
         self.assertFalse(build_fork_app.wants_timestamp(build_fork_app.FORK_IDENTITY))
         self.assertTrue(build_fork_app.wants_timestamp("0123456789ABCDEF0123456789ABCDEF01234567"))
 
+    LISTING = (
+        '  1) 1111111111111111111111111111111111111111 "msgblast-imessage local signing"\n'
+        '  2) 0123456789ABCDEF0123456789ABCDEF01234567 "Apple Development: Someone (TEAM000000)"\n'
+        "     2 valid identities found\n"
+    )
+
+    def test_identity_listed_matches_a_whole_hash_or_name(self):
+        listed = build_fork_app.identity_listed
+        self.assertTrue(listed("0123456789ABCDEF0123456789ABCDEF01234567", self.LISTING))
+        self.assertTrue(listed("msgblast-imessage local signing", self.LISTING))
+        for bad in ("valid", "-", "", "0123456789", "Apple Development", "identities"):
+            self.assertFalse(listed(bad, self.LISTING), bad)
+
+    def test_identity_available_asks_for_valid_identities_only(self):
+        seen = []
+        def runner(args):
+            seen.append(args)
+            return self.LISTING
+        self.assertTrue(build_fork_app.identity_available("msgblast-imessage local signing", runner))
+        self.assertEqual(seen, [["security", "find-identity", "-v", "-p", "codesigning"]])
+
+    def test_failed_signing_removes_the_unsigned_app_and_zip(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            app, stale = Path(d) / "msgblast iMessage.app", Path(d) / "x.zip"
+            (app / "Contents").mkdir(parents=True)
+            stale.write_text("z")
+            def fail(command, cwd):
+                raise SystemExit("Command failed (1): codesign")
+            with self.assertRaises(SystemExit):
+                build_fork_app.sign_or_discard(app, stale, [["codesign", "--force"]], fail)
+            self.assertFalse(app.exists())
+            self.assertFalse(stale.exists())
+
+    def test_signing_keeps_the_app_and_drops_the_zip(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            app, stale = Path(d) / "msgblast iMessage.app", Path(d) / "x.zip"
+            (app / "Contents").mkdir(parents=True)
+            stale.write_text("z")
+            ran = []
+            build_fork_app.sign_or_discard(app, stale, [["a"], ["b"]], lambda c, cwd: ran.append(c))
+            self.assertEqual(ran, [["a"], ["b"]])
+            self.assertTrue(app.exists())
+            self.assertFalse(stale.exists())
+
+    def test_apple_development_authority_counts_as_the_fork_identity(self):
+        app = Path("/Applications/msgblast iMessage.app")
+        dev = sign_check.signature_facts(app, canned(authority="Apple Development: Someone (TEAM000000)"))
+        self.assertTrue(dev["authority_is_fork_identity"])
+        other = sign_check.signature_facts(app, canned(authority="Developer ID Application: Other (TEAM111111)"))
+        self.assertFalse(other["authority_is_fork_identity"])
+
     def test_signature_facts(self):
         app = Path("/Applications/msgblast iMessage.app")
         facts = sign_check.signature_facts(app, canned())
