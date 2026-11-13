@@ -15,6 +15,9 @@ fork-only features here, not upstream.
   "msgblast iMessage.app" (its own bundle ID and support folder, updates and telemetry off) by
   reusing upstream's preview builder unchanged, and `companion/spikes/` holds the phase 0 probes,
   which print counts only. Their tests are `scripts/tests/test_companion_*.py`.
+  Since 2026-11-12 it signs with the identity named by `MSGBLAST_SIGN_IDENTITY` or
+  `~/.config/msgblast-imessage/signing-identity` (an Apple Development identity's SHA-1, kept out of
+  the repo), else the self-signed one; an Apple-issued identity also gets `--timestamp`.
 - **Since 2026-11-07:** `.github/workflows/fork-ci.yml` is the fork's own CI (Python tests on
   Linux and macOS, plus the native core tests). Upstream's workflows are kept but switched off in
   this fork's Actions settings.
