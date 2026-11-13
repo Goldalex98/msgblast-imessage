@@ -185,3 +185,16 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
 - Uplink then stopped. The app has `chat.db` open, but HomeChat's `last_seen_ts` stopped moving, and `SecurityAgent` is up: a Keychain dialog is waiting. The token item's partition is the build's `cdhash`, so each self-signed rebuild prompts again. I installed while Alex was remote; that was a mistake, and the new rule is to never reinstall while he can't reach the Mac.
 - Research (2026-11-12, advice only, untested): a free Apple ID "Apple Development" certificate should give a stable `teamid:` partition (Apple's securityd `clientid.cpp`). Data protection keychain access groups need a profile, so they're out. Alex chose the free route for his next time at the Mac (QUEUED).
 - Not run: any acceptance check A–G.
+
+## 2026-11-12 21:30 ET — Fork signing moved to Apple Development; Keychain re-prompt fixed
+- Alex answered the waiting Keychain dialog at about 19:10 ET, and uplink resumed.
+- Alex created a free "Apple Development" certificate in Xcode. Read-only check: it has OID 1.2.840.113635.100.6.1.12 and a team ID, and is valid until 2027-11-13. It showed as invalid until Apple's WWDR G3 intermediate was added; with Alex's yes, Claude downloaded it from apple.com, checked it chains to Apple Root CA, and imported it into the login keychain. Trust settings were not changed.
+- PR #28 (merged `19b93ca`): `build_fork_app.py` takes the identity from `MSGBLAST_SIGN_IDENTITY` or `~/.config/msgblast-imessage/signing-identity`, which holds a SHA-1 so the name stays out of this repo. Apple-issued identities get `--timestamp`.
+  - The send-safety review found 4 Important issues, all fixed test-first: `find-identity -v` with whole-line matching; no half-signed app left after a failed re-sign; sign_check accepts the Apple Development authority; a dated note in the spec.
+  - Two minors deferred: no notice when an empty identity file falls back; no test of `main()`'s preflight end to end.
+  - Mac gate: Python 193 OK, native 1051/0.
+- Proof, on the MacBook:
+  - The first Apple-signed build needed Alex once: Always Allow for `codesign` in Terminal.app, the Keychain dialog, and a Full Disk Access re-grant.
+  - Claude then rebuilt and reinstalled twice from its own shell (different cdhashes). No Keychain dialog appeared, and HomeChat saw the Mac 10 s after the second install.
+  - The designated requirement is now `anchor apple generic` plus the certificate's CN, so it should survive renewal. Renewal itself is unproven.
+- Not run: any acceptance check. "Send approved replies" is still off.
