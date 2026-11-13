@@ -1,6 +1,6 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-12 12:00 ET
+**Updated:** 2026-11-12 21:30 ET
 **At:** The Mac runs the reader-hardening build (`2d037cc`, installed 2026-11-10 22:06 ET) and reads Up to date; acceptance checks 1–4 passed on `2bcc8ad`; checks 5–8 not run on either build (no test contact free).
 **Next:** Phase 3 acceptance: install a build from `main` and turn on "Send approved replies" (HomeChat's send half is live since 2026-11-12 10:27 ET), then Mac checks A–G with a test contact and Alex's yes per send. Also open: Mac checks 5–8 plus a flag-and-clear check, and HomeChat PR D.
 **Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger (PR B) live; update and replies (PR C) merged in `homechat-bot`; desk items (PR D) not built.
@@ -21,15 +21,13 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - "msgblast iMessage.app" (build `2d037cc`, installed 2026-11-10 22:06 ET; the `2bcc8ad` copy is kept outside the repo for rollback) on the MacBook, address and token saved, status Up to date (Alex's reading).
 
 ## QUEUED
-- Signing route, next time Alex is at the Mac (his yes, 2026-11-12): sign with a free Apple ID "Apple Development" certificate, so the Keychain item gets a stable `teamid:` partition (self-signed builds get a per-build `cdhash:` and re-prompt). First check, read-only, that the certificate carries OID 1.2.840.113635.100.6.1.12. Then: Always Allow the signing key from Terminal.app, re-grant Full Disk Access and Automation, re-enter the token, and rebuild twice with no prompt. The build script reads the identity name from local config, never the repo (it contains his name), and adds `--timestamp`. Fallbacks: paid Developer ID, then a mode-600 token file. Until then, never reinstall while Alex can't reach the Mac.
-- Phase 3 acceptance (`docs/superpowers/runbooks/phase3-mac-acceptance.md`, checks A–G): HomeChat's side is live; waits on a build from `main` with the Mac switch on, a free test contact, and Alex's `yes` per send.
+- Phase 3 acceptance (`docs/superpowers/runbooks/phase3-mac-acceptance.md`): HomeChat's side is live, and a phase 3 build from `main` is installed with "Send approved replies" off. Alex chose to run A, B, C, D and E, and to skip F (it changes a real group's members). Each check needs a flagged text from the test contact; for C, one from a group member that uses his name and asks a question. The flagger runs every 30 min from 07:00 to 22:00. Then Alex's `N yes` / `N edit:` plus the literal `yes` in WhatsApp. Claude toggles the Mac switch, does the quits for D and E, and reads the counts. Rebuilds no longer need Alex at the Mac.
 - Deletion reconcile, the Mac half: send `present` daily for the last 14 days (queued on the HomeChat side; not planned here yet).
-- Install a build from `main` after the phase 3 merge; until acceptance, keep "Send approved replies" off.
 - `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
 - Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip) on build `2d037cc`: not run, waiting for a free test contact. Run them with one question-shaped text so the same run checks a flag on Alex's phone and its clear on his reply.
 
 ## BLOCKED
-- Uplink paused since the phase 3 build was installed (2026-11-12 ~10:57 ET, `a128e1b`; old build kept in `build/rollback-20261112/`). A Keychain dialog for the token waits on the Mac's screen and needs Alex's password plus "Always Allow"; Alex chose to answer it when back at the Mac rather than roll back. Phase 3 acceptance waits on this.
+- None.
 
 ## HELD
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
@@ -38,6 +36,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - None. Terminal keeps Full Disk Access and Automation → Messages for now, by Alex's choice (2026-11-09), in case a Terminal step is needed again.
 
 ## DONE
+- 2026-11-12 21:28 ET: PR #28 merged (`19b93ca`): the fork builds sign with Alex's free Apple Development identity (its hash in `~/.config/msgblast-imessage/signing-identity`, outside the repo; timestamped). Proven on the MacBook: after one Keychain "Always Allow" and a Full Disk Access re-grant, two rebuilds (different cdhashes) were installed with no Keychain dialog, and HomeChat heard from the Mac 10 s after the second. Phase 3 build running from it, sends off. Rollback copies: `build/rollback-20261112*/`. The certificate expires 2027-11-13; renew it in Xcode at the Mac before then.
 - 2026-11-11: PR #23 merged (`36e572a`; PR CI full suite green; Mac gate re-run Python 182/0 failed, native 1052/0 failed after a first run with 3 upstream driver-test timeouts that passed alone): phase 3 Mac side (plan Tasks 1–10): send contract fixed, wire models, rules, a fixed argv AppleScript and runner, identity and read-back queries, outcome decision, no-text send ledger with an exclusive lock, sends client, executor, Settings switch (off by default), runbook. Send-safety review: 0 Critical, 3 Important fixed test-first, 6 minors deferred (LOG). Proven only on synthetic fixtures and fakes; no real send from the fork app.
 - 2026-11-11: PR #22 merged (`97f28bb`): the approved phase 3 Mac plan; `main` CI green.
 - 2026-11-11: PR #21 merged (`8dfcba2`; Mac gate Python 182/0 failed, native 962/0 failed; PR and `main` CI green): Settings Save says when a token is still needed (empty field, none saved) and reads the token back after writing it, so a write that didn't stick shows an error instead of "Saved". The save logic moved into Core (`CompanionConfig.saveSettings`) with 7 unit tests on a fake token store. Not installed on the Mac; the signed app's Keychain path is unchanged and not re-checked.
