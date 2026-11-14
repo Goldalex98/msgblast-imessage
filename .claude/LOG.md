@@ -198,3 +198,8 @@ _The flight recorder: append only, newest at the bottom. Decisions, corrections,
   - Claude then rebuilt and reinstalled twice from its own shell (different cdhashes). No Keychain dialog appeared, and HomeChat saw the Mac 10 s after the second install.
   - The designated requirement is now `anchor apple generic` plus the certificate's CN, so it should survive renewal. Renewal itself is unproven.
 - Not run: any acceptance check. "Send approved replies" is still off.
+
+## 2026-11-14 09:00 ET — STATUS header refreshed
+- The At, Phase, Milestones, PLAN and RUNNING NOW lines still described the 2026-11-10 reader-hardening build, though DONE recorded the Apple-signed phase 3 build as installed. They now match DONE.
+- Phase 3 is `now` and phase 1 is `next`, because phase 3 acceptance is first in QUEUED; phase 1 still has checks 5–8 and the desk items. This change only re-labels; nothing was re-checked against the Mac or HomeChat.
+- STATUS.md is about 16k characters, over the 8k cap. Not trimmed here.
