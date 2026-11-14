@@ -119,3 +119,6 @@ EVIDENCE (moved):
 ## 2026-11-14 17:40 ET — Alex's answers to the pivot review
 - Status: whichever is easier; no menu-bar icon if it is more work. Repo: a new public one is fine. Updates: he can't review every `imsg` update by hand, so either don't pin, or bumps must arrive and merge automatically when CI passes; the design has to include that mechanism (e.g. a dependency bot on the `IMsgCore` package plus auto-merge on a green run, and a way for the Mac to pick the merged update up). `brew upgrade`: he didn't set one up, and none runs unattended (no Homebrew launch agent on the Mac).
 - Taken as Alex's go-ahead for the pivot direction, conditional on the no-send trial ("Fable review first and then if it checks out we'll move on to a trial"). Nothing installed, built or sent yet.
+
+## 2026-11-14 17:42 ET — Moved from STATUS (size trim)
+- 2026-11-14: Phase 3 acceptance on the installed build: A not run (Alex skipped); B failed: HomeChat refused the approved edit before queueing ("That thread isn't iMessage", `any;` GUIDs), 0 sends queued, Mac ledger 0; C, D, E not run (Alex chose a redesign first); F skipped earlier. Proven end to end: uplink and the flagger (test text flagged and nudged to Alex's phone). Not proven: any send from the fork app.
