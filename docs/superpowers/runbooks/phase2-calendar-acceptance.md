@@ -3,53 +3,23 @@
 2026-11-14 · HomeChat spec `docs/superpowers/specs/2026-11-14-imsg-phase2-calendar-amendment.md` and plan
 `docs/superpowers/plans/2026-11-14-imsg-phase2-calendar-plan.md` (both in `homechat-bot`)
 
-Phase 2 is HomeChat-only. The Mac app does not change, so there is no build or install step. These checks need HomeChat's phase 2 code deployed with `HOMECHAT_IMSG_CALENDAR=on`, which happens only after Alex's yes.
+Phase 2 is HomeChat-only; the Mac app doesn't change. HomeChat runs it with `HOMECHAT_IMSG_CALENDAR=on` (live since 2026-11-14 14:05 ET).
 
-**These checks write real calendar events.** Each `N add` runs only when Alex types it himself, on a text from a test contact he chooses. Nothing here sends an iMessage. The test contact's name, number and message text stay out of this repo, commits, PRs and any chat with Claude. Report results as pass or fail, with the reply line's shape (for example "Added to <calendar>: <title>, <when>"), never the title itself.
+**The test contact sends one text. Everything after that is Alex on his own phone.** `N add` writes a real calendar event and never sends an iMessage. The contact's name, number and message text stay out of this repo, commits, PRs and any chat with Claude.
 
-## Before you start
+Clashes, date-only texts, a changed item, a stale `N add` and the daily cap are covered by HomeChat's tests, not here.
 
-- **Deployed:** HomeChat runs the merged phase 2 commit, and its status shows the calendar switch on.
-- **Off first:** before the switch is turned on, `1 add` on any item answers "Calendar isn't switched on for texts yet." and writes nothing.
-- **Baseline:** note how many events the default calendar holds on the test date, so check D can count new ones.
+## The check
 
-## Checks
+1. **One text.** The test contact texts Alex a question with a day and a time (for example "dinner Saturday at 7?").
+2. **The update.** In the next iMessage update on WhatsApp, the item ends with ` · free` (or the event it clashes with) and ` · "N add"`.
+3. **Add it.** Alex replies `N add`.
+   - The reply reads "Added to <calendar>: <title>, <when>", with the day and time from the update.
+   - The event is in Calendar on his phone, once.
+4. **Add it again.** Alex replies the same `N add`.
+   - The reply reads "Already on your calendar: …".
+   - Calendar still shows one event.
 
-**A. Free.**
-- The test contact texts a question with a date and time, and nothing is on any read calendar at that time (for example "dinner Saturday at 7?").
-- Pass:
-  - the next update shows the item with ` · free · "N add"`;
-  - Alex sees it on his phone.
+Pass is all four. Then Alex deletes the test event in Calendar.
 
-**B. Clash.**
-- Use a second dated text whose time overlaps an existing event.
-- Pass: the item shows that event's title and time instead of "free", and offers `N add`.
-
-**C. Date only.**
-- Use a text with a date and no time.
-- Pass: the item lists that day's events (up to 3, then "+N more"), or "free". `N add` makes an all-day event.
-
-**D. Add.**
-- Alex types `N add` on the item from check A.
-- Pass:
-  - the reply reads "Added to <default calendar>: <title>, <when>", and the date and time match what the update showed;
-  - the event appears once in Calendar on Alex's phone;
-  - the default calendar has exactly one more event on that date than the baseline;
-  - the flag stays open (adding does not clear it).
-
-**E. Second add.**
-- Alex types the same `N add` again.
-- Pass: the reply reads "Already on your calendar: <title>, <when>." and no second event appears.
-
-**F. Changed item.**
-- The test contact sends a follow-up that changes the time, before the next update.
-- Alex types `N add` against the old list.
-- Pass: the reply is "That item changed; here's the current one." with the new line, and nothing is added.
-
-**G. Shown on the calendar.**
-- After check D, the next update shows that item as "on your calendar", not "free" or a clash with itself, and offers no `N add`.
-
-## Afterwards
-
-- Alex deletes the test events in Calendar himself.
-- Record each check's pass or fail in `.claude/STATUS.md` EVIDENCE, with the HomeChat commit and the date. Name anything not exercised (for example "cap of 10 not exercised live; covered by tests").
+Record pass or fail in `.claude/STATUS.md` EVIDENCE, with the HomeChat commit and the date, never the title or text.
