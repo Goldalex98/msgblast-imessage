@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pick_chat  # noqa: E402  (the one definition of the prefix shapes and service labels)
 import spikelib  # noqa: E402
 
 SEND_CAP = 6
@@ -27,9 +28,8 @@ TAMPER_HANDLE = "tamper@example.invalid"
 TARGETS = ("group", "one_to_one")
 LABEL_RE = re.compile(r"^[a-z0-9]{1,16}$")
 OSASCRIPT_TIMEOUT_S = 35
-ALLOWED = frozenset(TARGETS) | frozenset({"any;-;", "any;+;", "iMessage;-;", "iMessage;+;", "SMS;-;",
-                                         "iMessage", "SMS", "RCS", "sent", "ready", "not_sent", "ambiguous",
-                                         "messages", "terminal", "other", "unknown"})
+ALLOWED = (frozenset(TARGETS) | pick_chat.GUID_PREFIXES | pick_chat.SERVICE_LABELS
+           | frozenset({"sent", "ready", "not_sent", "ambiguous", "messages", "terminal", "unknown"}))
 
 Runner = Callable[..., Tuple[int, str, bool]]
 

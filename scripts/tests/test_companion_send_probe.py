@@ -227,6 +227,14 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual((report["guid_prefix"], report["chat_service"]), ("unknown", "unknown"))
         spikelib.assert_counts_only(report, send_probe.ALLOWED | {"c2"})
 
+    def test_allowedDerivesFromPickChat(self):
+        # The writer module is the single definition of the prefix shapes and service names.
+        self.assertLessEqual(pick_chat.GUID_PREFIXES, send_probe.ALLOWED)
+        self.assertLessEqual(pick_chat.SERVICE_LABELS, send_probe.ALLOWED)
+        self.assertEqual(send_probe.ALLOWED - pick_chat.GUID_PREFIXES - pick_chat.SERVICE_LABELS,
+                         frozenset(send_probe.TARGETS) | frozenset({"sent", "ready", "not_sent", "ambiguous",
+                                                                    "messages", "terminal", "unknown"}))
+
     def test_reportStillCountsOnly(self):
         report = {"guid_prefix": "any;-;", "chat_service": "iMessage", "outcome": "ready", "code": None}
         spikelib.assert_counts_only(report, send_probe.ALLOWED)
@@ -306,6 +314,24 @@ class PickChatTests(unittest.TestCase):
         self.assertEqual(pick_chat.guid_prefix_shape("any;+;chat-test"), "any;+;")
         self.assertEqual(pick_chat.service_label("weird-service"), "other")
         self.assertEqual(pick_chat.service_label(""), "other")
+
+    def test_nullServiceRecordsOther(self):
+        conn = sqlite3.connect(str(self.db))
+        fx.add_chat(conn, "any;-;+15555550104", 45, ["+15555550104"], service=None)
+        conn.commit()
+        conn.close()
+        code, printed = self.pick("one_to_one", handle="+15555550104")
+        self.assertEqual(code, 0)
+        self.assertTrue(printed.strip().endswith(", service other"), printed)
+        self.assertEqual(json.loads(self.config_path.read_text())["one_to_one"]["service"], "other")
+
+    def test_prefixRuleIsNarrowAndNullSafe(self):
+        # Only the five known shapes survive; SMS;+; and anything handle-shaped record as other.
+        self.assertEqual(pick_chat.guid_prefix_shape("SMS;+;chat-test"), "other")
+        self.assertEqual(pick_chat.guid_prefix_shape("SMS;-;chat-test"), "SMS;-;")
+        self.assertEqual(pick_chat.guid_prefix_shape("+15555550100;+;chat-test"), "other")
+        self.assertEqual(pick_chat.guid_prefix_shape(None), "other")
+        self.assertEqual(pick_chat.guid_prefix_shape(""), "other")
 
 
 if __name__ == "__main__":

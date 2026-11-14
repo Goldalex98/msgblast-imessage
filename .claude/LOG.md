@@ -78,3 +78,10 @@ DONE (moved, superseded by the phase 3 build):
 - Counts-only probe of the Mac's chat table (run by Alex in Terminal.app): `service_name` is never empty; direct: iMessage 288, SMS 913, RCS 29; group: iMessage 356, SMS 183, RCS 27. Every direct chat has exactly 1 handle (1230). So the Mac's own `service_name == "iMessage"` gate and its participant count hold on real data; HomeChat's prefix gate is the only GUID blocker, and `service_name` (not the GUID) is what tells iMessage from SMS/RCS.
 - Fable (high) reviewed both halves read-only at Alex's ask. Beyond the GUID gate: near-miss commands and a cancelled confirm fall through to the tool-using assistant; the confirm accepts only a bare `yes`; any other bot line (e.g. "Sent to…") cancels an open confirm; the nudge footer never mentions sending; all script refusal codes report as `script_refused`; a fetched send the Mac never records stays silent for 24 h and blocks its thread; no `any;` fixtures. It proposed per-item nudges with quote-reply selection, `send` / `say <text>` verbs and a plain-language confirm.
 - Alex: the y/n flow is "something a computer would understand", the problem is bigger than one reply; redesign first, other acceptance tests not worth running now. Claude turned "Send approved replies" off (app quit, `companion.json` edited, reopened).
+
+## 2026-11-14 — Preflight records prefix shape and service (Task 0 fix)
+
+- `pick_chat.py` stores `guid_prefix` and `service` for the chosen chat, and `send_probe.py` copies both into the preflight report (`unknown` for older configs).
+- The prefix rule is narrow: only the five known shapes (`any;-;`, `any;+;`, `iMessage;-;`, `iMessage;+;`, `SMS;-;`) are reported. Anything else, e.g. `SMS;+;`, reports `other`, so a handle-shaped first field can never reach the console or the report. A NULL service or a NULL GUID reports `other`.
+- The prefix shapes and service labels are defined once, in `pick_chat.py`; `send_probe.py` derives its `ALLOWED` from them.
+- Not run yet: Alex's Step 6 preflight in Terminal.app.

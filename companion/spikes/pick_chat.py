@@ -17,20 +17,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import spikelib  # noqa: E402
 
 KINDS = {"group": 43, "one_to_one": 45}
+# The single definition of the prefix shapes and service labels; send_probe.py derives its ALLOWED from these.
+OTHER = "other"
 GUID_PREFIXES = frozenset({"any;-;", "any;+;", "iMessage;-;", "iMessage;+;", "SMS;-;"})
-SERVICES = {"imessage": "iMessage", "sms": "SMS", "rcs": "RCS"}
+SERVICE_BY_NAME = {"imessage": "iMessage", "sms": "SMS", "rcs": "RCS"}
+SERVICE_LABELS = frozenset(SERVICE_BY_NAME.values()) | {OTHER}
 
 
-def guid_prefix_shape(guid: str) -> str:
+def guid_prefix_shape(guid: Optional[str]) -> str:
     """The GUID up to and including its second ';' if that is a known shape, else 'other'.
     Never returns the rest of the GUID, so a handle-shaped first field cannot leak."""
+    if not isinstance(guid, str):
+        return OTHER
     parts = guid.split(";", 2)
     prefix = parts[0] + ";" + parts[1] + ";" if len(parts) == 3 else ""
-    return prefix if prefix in GUID_PREFIXES else "other"
+    return prefix if prefix in GUID_PREFIXES else OTHER
 
 
-def service_label(service_name: str) -> str:
-    return SERVICES.get((service_name or "").lower(), "other")
+def service_label(service_name: Optional[str]) -> str:
+    return SERVICE_BY_NAME.get((service_name or "").lower(), OTHER)
 
 
 def _handles(conn, chat_rowid: int) -> list:
