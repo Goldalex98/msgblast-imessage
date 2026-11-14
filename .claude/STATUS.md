@@ -1,30 +1,30 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-12 21:30 ET
-**At:** The Mac runs the reader-hardening build (`2d037cc`, installed 2026-11-10 22:06 ET) and reads Up to date; acceptance checks 1–4 passed on `2bcc8ad`; checks 5–8 not run on either build (no test contact free).
-**Next:** Phase 3 acceptance: install a build from `main` and turn on "Send approved replies" (HomeChat's send half is live since 2026-11-12 10:27 ET), then Mac checks A–G with a test contact and Alex's yes per send. Also open: Mac checks 5–8 plus a flag-and-clear check, and HomeChat PR D.
-**Phase:** Phase 1 Read and flag: uplink live end to end (Mac → HomeChat store); HomeChat's flagger (PR B) live; update and replies (PR C) merged in `homechat-bot`; desk items (PR D) not built.
-**Milestones:** Setup ✓ · Spikes ✓ (one follow-up) · Read and flag (now: uplink live) · Calendar · Replies · Duet tools
+**Updated:** 2026-11-14 09:00 ET
+**At:** The Mac runs the phase 3 build, signed with Apple Development, with sending switched off. Both halves of replies are built; no acceptance check has run on them.
+**Next:** Phase 3 checks A–E with a test contact and Alex's yes per send; then phase 1 checks 5–8 with a flag-and-clear, and HomeChat PR D.
+**Phase:** Phase 3 Replies: Mac side installed with its switch off, HomeChat side live, acceptance not run. Phase 1 left open: checks 5–8 and desk items (PR D).
+**Milestones:** Setup ✓ · Spikes ✓ · Read and flag · Calendar · Replies (now) · Duet tools
 **Project Desk:** not linked from this public repo
 
 _The instrument panel: rewrite it in place, only ever describing now, on every state change. Why things are the way they are goes in [LOG.md](LOG.md) (append only). Format and rules: the user-level `flight-deck` skill. This repo is public: no names, numbers, hosts or tokens here._
 
 ## PLAN
 - 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
-- 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — now (uplink and flagger live; update in review; desk next)
+- 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — next (uplink, flagger and update live; checks 5–8 and desk items left)
 - 2 Calendar — free or clash for texted dates, add on yes — next
-- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — Mac side merged (PR #23, not installed, switch off); HomeChat side live (`homechat-bot` #277, #279, #280; switch on 2026-11-12); acceptance not run
+- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — now (both halves live, Mac switch off; acceptance A–E not run)
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
 - Fork CI (`fork-ci.yml`): runs on PRs and pushes to `main`.
-- "msgblast iMessage.app" (build `2d037cc`, installed 2026-11-10 22:06 ET; the `2bcc8ad` copy is kept outside the repo for rollback) on the MacBook, address and token saved, status Up to date (Alex's reading).
+- "msgblast iMessage.app" on the MacBook: the phase 3 build, Apple Development signed, installed 2026-11-12 evening after PR #28; "Send approved replies" off. HomeChat heard from it 10 s after that install; not re-checked since. Rollback copies: `build/rollback-20261112*/`.
 
 ## QUEUED
 - Phase 3 acceptance (`docs/superpowers/runbooks/phase3-mac-acceptance.md`): HomeChat's side is live, and a phase 3 build from `main` is installed with "Send approved replies" off. Alex chose to run A, B, C, D and E, and to skip F (it changes a real group's members). Each check needs a flagged text from the test contact; for C, one from a group member that uses his name and asks a question. The flagger runs every 30 min from 07:00 to 22:00. Then Alex's `N yes` / `N edit:` plus the literal `yes` in WhatsApp. Claude toggles the Mac switch, does the quits for D and E, and reads the counts. Rebuilds no longer need Alex at the Mac.
 - Deletion reconcile, the Mac half: send `present` daily for the last 14 days (queued on the HomeChat side; not planned here yet).
 - `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
-- Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip) on build `2d037cc`: not run, waiting for a free test contact. Run them with one question-shaped text so the same run checks a flag on Alex's phone and its clear on his reply.
+- Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip) on the installed build: not run, waiting for a free test contact. Run them with one question-shaped text so the same run checks a flag on Alex's phone and its clear on his reply.
 
 ## BLOCKED
 - None.
