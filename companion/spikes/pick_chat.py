@@ -3,7 +3,8 @@
 Run on the Mac by Alex:
   python3 -I companion/spikes/pick_chat.py --kind group --name-contains "<test group name>"
   python3 -I companion/spikes/pick_chat.py --kind one_to_one --handle "<test contact handle>"
-Refuses unless exactly one chat matches. Prints only the participant count, never an identifier.
+Refuses unless exactly one chat matches. Prints only the participant count, the GUID prefix shape and
+the service, never an identifier.
 """
 from __future__ import annotations
 
@@ -16,6 +17,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import spikelib  # noqa: E402
 
 KINDS = {"group": 43, "one_to_one": 45}
+# The single definition of the prefix shapes and service labels; send_probe.py derives its ALLOWED from these.
+OTHER = "other"
+GUID_PREFIXES = frozenset({"any;-;", "any;+;", "iMessage;-;", "iMessage;+;", "SMS;-;"})
+SERVICE_BY_NAME = {"imessage": "iMessage", "sms": "SMS", "rcs": "RCS"}
+SERVICE_LABELS = frozenset(SERVICE_BY_NAME.values()) | {OTHER}
+
+
+def guid_prefix_shape(guid: Optional[str]) -> str:
+    """The GUID up to and including its second ';' if that is a known shape, else 'other'.
+    Never returns the rest of the GUID, so a handle-shaped first field cannot leak."""
+    if not isinstance(guid, str):
+        return OTHER
+    parts = guid.split(";", 2)
+    prefix = parts[0] + ";" + parts[1] + ";" if len(parts) == 3 else ""
+    return prefix if prefix in GUID_PREFIXES else OTHER
+
+
+def service_label(service_name: Optional[str]) -> str:
+    return SERVICE_BY_NAME.get((service_name or "").lower(), OTHER)
 
 
 def _handles(conn, chat_rowid: int) -> list:
@@ -36,27 +56,28 @@ def pick_chat(db_path: str, kind: str, name_contains: Optional[str], handle: Opt
         print("--kind one_to_one needs --handle", file=sys.stderr)
         return 4
     conn = spikelib.open_ro(db_path)
-    chats = conn.execute("SELECT ROWID, guid, COALESCE(display_name, '') FROM chat WHERE style = ?",
-                         (KINDS[kind],)).fetchall()
+    chats = conn.execute("SELECT ROWID, guid, COALESCE(display_name, ''), COALESCE(service_name, '')"
+                         " FROM chat WHERE style = ?", (KINDS[kind],)).fetchall()
     matches = []
-    for rowid, guid, display_name in chats:
+    for rowid, guid, display_name, service_name in chats:
         handles = _handles(conn, rowid)
         if kind == "group" and name_contains.lower() in display_name.lower():
-            matches.append((guid, handles))
+            matches.append((guid, handles, service_name))
         elif kind == "one_to_one" and len(handles) == 1 and handles[0].lower() == handle.lower():
-            matches.append((guid, handles))
+            matches.append((guid, handles, service_name))
     conn.close()
     if len(matches) != 1:
         print(f"found {len(matches)} matching {kind} chats; need exactly 1, nothing written", file=sys.stderr)
         return 4
-    guid, handles = matches[0]
+    guid, handles, service_name = matches[0]
+    prefix, service = guid_prefix_shape(guid), service_label(service_name)
     try:
         config = spikelib.load_config(config_path)
     except spikelib.ProbeError:
         config = {}
-    config[kind] = {"chat_id": guid, "handles": handles}
+    config[kind] = {"chat_id": guid, "handles": handles, "guid_prefix": prefix, "service": service}
     spikelib.save_config(config, config_path)
-    print(f"wrote {kind} target with {len(handles)} participants")
+    print(f"wrote {kind} target with {len(handles)} participants, prefix {prefix}, service {service}")
     return 0
 
 

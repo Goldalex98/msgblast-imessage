@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pick_chat  # noqa: E402  (the one definition of the prefix shapes and service labels)
 import spikelib  # noqa: E402
 
 SEND_CAP = 6
@@ -27,8 +28,8 @@ TAMPER_HANDLE = "tamper@example.invalid"
 TARGETS = ("group", "one_to_one")
 LABEL_RE = re.compile(r"^[a-z0-9]{1,16}$")
 OSASCRIPT_TIMEOUT_S = 35
-ALLOWED = frozenset(TARGETS) | frozenset({"sent", "ready", "not_sent", "ambiguous",
-                                         "messages", "terminal", "other", "unknown"})
+ALLOWED = (frozenset(TARGETS) | pick_chat.GUID_PREFIXES | pick_chat.SERVICE_LABELS
+           | frozenset({"sent", "ready", "not_sent", "ambiguous", "messages", "terminal", "unknown"}))
 
 Runner = Callable[..., Tuple[int, str, bool]]
 
@@ -169,6 +170,11 @@ def blocked_path(count_path: Path) -> Path:
     return Path(count_path).parent / BLOCK_NAME
 
 
+def _known(value) -> str:
+    """A config value reaches the report only if it is in ALLOWED; otherwise it reports unknown."""
+    return value if isinstance(value, str) and value in ALLOWED else "unknown"
+
+
 def _with_prefix(chat_id: str, id_prefix: Optional[str]) -> str:
     if not id_prefix:
         return chat_id
@@ -237,6 +243,7 @@ def run_probe(config: dict, target: str, label: str, preflight_only: bool, tampe
             anchor = {"rows": None, "delay_s": None}
     return {
         "label": label, "target": target, "preflight_only": preflight_only, "tamper": tamper,
+        "guid_prefix": _known(entry.get("guid_prefix")), "chat_service": _known(entry.get("service")),
         "outcome": outcome, "code": code, "elapsed_ms": elapsed_ms,
         "frontmost_before": front_before, "frontmost_after": front_after,
         "messages_running_before": running_before, "messages_running_after": running_after,

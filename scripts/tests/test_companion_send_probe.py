@@ -209,6 +209,39 @@ class ProbeTests(unittest.TestCase):
             self.assertNotIn(sentinel, dumped)
         spikelib.assert_counts_only(report, send_probe.ALLOWED | {"c2"})
 
+    def test_preflightReportCarriesPrefixAndService(self):
+        self.config["group"]["guid_prefix"] = "any;+;"
+        self.config["group"]["service"] = "iMessage"
+        report, printed = self.probe(FakeRunner(osascript=(0, "READY", False)), preflight=True)
+        self.assertEqual((report["guid_prefix"], report["chat_service"]), ("any;+;", "iMessage"))
+        spikelib.assert_counts_only(report, send_probe.ALLOWED | {"c2"})
+        self.assertNotIn("chatSENTINEL", json.dumps(report) + printed)
+        # Configs written before this change, or with a value outside the enum, report unknown.
+        del self.config["group"]["guid_prefix"]
+        del self.config["group"]["service"]
+        report, _ = self.probe(FakeRunner(osascript=(0, "READY", False)), preflight=True)
+        self.assertEqual((report["guid_prefix"], report["chat_service"]), ("unknown", "unknown"))
+        self.config["group"]["guid_prefix"] = fx.SENTINEL_GROUP_GUID
+        self.config["group"]["service"] = fx.SENTINEL_EMAIL
+        report, _ = self.probe(FakeRunner(osascript=(0, "READY", False)), preflight=True)
+        self.assertEqual((report["guid_prefix"], report["chat_service"]), ("unknown", "unknown"))
+        spikelib.assert_counts_only(report, send_probe.ALLOWED | {"c2"})
+
+    def test_allowedDerivesFromPickChat(self):
+        # The writer module is the single definition of the prefix shapes and service names.
+        self.assertLessEqual(pick_chat.GUID_PREFIXES, send_probe.ALLOWED)
+        self.assertLessEqual(pick_chat.SERVICE_LABELS, send_probe.ALLOWED)
+        self.assertEqual(send_probe.ALLOWED - pick_chat.GUID_PREFIXES - pick_chat.SERVICE_LABELS,
+                         frozenset(send_probe.TARGETS) | frozenset({"sent", "ready", "not_sent", "ambiguous",
+                                                                    "messages", "terminal", "unknown"}))
+
+    def test_reportStillCountsOnly(self):
+        report = {"guid_prefix": "any;-;", "chat_service": "iMessage", "outcome": "ready", "code": None}
+        spikelib.assert_counts_only(report, send_probe.ALLOWED)
+        for leak in ("any;+;chat-test", "iMessage;+;chatSENTINEL", fx.SENTINEL_PHONE):
+            with self.assertRaises(ValueError):
+                spikelib.assert_counts_only({"guid_prefix": leak}, send_probe.ALLOWED)
+
 
 class PickChatTests(unittest.TestCase):
     def setUp(self):
@@ -231,7 +264,8 @@ class PickChatTests(unittest.TestCase):
     def test_pick_chat_requires_unique_match_and_prints_no_identifiers(self):
         code, printed = self.pick("group", name_contains="sentinel")
         self.assertEqual(code, 0)
-        self.assertEqual(printed.strip(), "wrote group target with 3 participants")
+        self.assertEqual(printed.strip(),
+                         "wrote group target with 3 participants, prefix iMessage;+;, service iMessage")
         code, printed_one = self.pick("one_to_one", handle=fx.SENTINEL_EMAIL)
         self.assertEqual(code, 0)
         config = json.loads(self.config_path.read_text())
@@ -253,6 +287,51 @@ class PickChatTests(unittest.TestCase):
         for text in (printed, printed_one, printed_dup, printed_none):
             for sentinel in fx.SENTINELS:
                 self.assertNotIn(sentinel, text)
+
+    def test_pickChatRecordsPrefixShapeAndService(self):
+        conn = sqlite3.connect(str(self.db))
+        fx.add_chat(conn, "any;-;+15555550100", 45, ["+15555550100"], service="iMessage")
+        fx.add_chat(conn, "any;+;chat-test", 43, ["+15555550101", "+15555550102", "+15555550103"],
+                    display_name="Test Group", service="RCS")
+        conn.commit()
+        conn.close()
+        code, printed_group = self.pick("group", name_contains="test group")
+        self.assertEqual(code, 0)
+        self.assertEqual(printed_group.strip(), "wrote group target with 3 participants, prefix any;+;, service RCS")
+        code, printed_one = self.pick("one_to_one", handle="+15555550100")
+        self.assertEqual(code, 0)
+        self.assertEqual(printed_one.strip(),
+                         "wrote one_to_one target with 1 participants, prefix any;-;, service iMessage")
+        config = json.loads(self.config_path.read_text())
+        self.assertEqual((config["group"]["guid_prefix"], config["group"]["service"]), ("any;+;", "RCS"))
+        self.assertEqual((config["one_to_one"]["guid_prefix"], config["one_to_one"]["service"]),
+                         ("any;-;", "iMessage"))
+        for text in (printed_group, printed_one):
+            for leaked in ("chat-test", "15555550", "Test Group"):
+                self.assertNotIn(leaked, text)
+        # A GUID whose first field is a handle, or an unknown service, is recorded only as "other".
+        self.assertEqual(pick_chat.guid_prefix_shape("+15555550100;-;someone"), "other")
+        self.assertEqual(pick_chat.guid_prefix_shape("any;+;chat-test"), "any;+;")
+        self.assertEqual(pick_chat.service_label("weird-service"), "other")
+        self.assertEqual(pick_chat.service_label(""), "other")
+
+    def test_nullServiceRecordsOther(self):
+        conn = sqlite3.connect(str(self.db))
+        fx.add_chat(conn, "any;-;+15555550104", 45, ["+15555550104"], service=None)
+        conn.commit()
+        conn.close()
+        code, printed = self.pick("one_to_one", handle="+15555550104")
+        self.assertEqual(code, 0)
+        self.assertTrue(printed.strip().endswith(", service other"), printed)
+        self.assertEqual(json.loads(self.config_path.read_text())["one_to_one"]["service"], "other")
+
+    def test_prefixRuleIsNarrowAndNullSafe(self):
+        # Only the five known shapes survive; SMS;+; and anything handle-shaped record as other.
+        self.assertEqual(pick_chat.guid_prefix_shape("SMS;+;chat-test"), "other")
+        self.assertEqual(pick_chat.guid_prefix_shape("SMS;-;chat-test"), "SMS;-;")
+        self.assertEqual(pick_chat.guid_prefix_shape("+15555550100;+;chat-test"), "other")
+        self.assertEqual(pick_chat.guid_prefix_shape(None), "other")
+        self.assertEqual(pick_chat.guid_prefix_shape(""), "other")
 
 
 if __name__ == "__main__":
