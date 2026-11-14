@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "ui_globs": [
+    "msgblast/Windows/**/*.swift",
+    "msgblast/Companion/*View.swift",
+    "msgblast/Core/*View.swift",
+    "msgblast/Permissions/*Guide.swift",
+    "msgblast/App/msgblastApp.swift",
+    "msgblast/App/OnboardingController.swift"
+  ],
+  "exclude": [
+    "msgblastTests/**",
+    "msgblastUITests/**",
+    "msgblast/Core/Companion/**",
+    "msgblast/Messages/**",
+    "msgblast/Storage/**",
+    "prototypes/**",
+    "scripts/**",
+    "output/**",
+    "release-notes/**"
+  ]
+}
