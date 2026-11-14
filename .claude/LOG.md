@@ -85,3 +85,14 @@ DONE (moved, superseded by the phase 3 build):
 - The prefix rule is narrow: only the five known shapes (`any;-;`, `any;+;`, `iMessage;-;`, `iMessage;+;`, `SMS;-;`) are reported. Anything else, e.g. `SMS;+;`, reports `other`, so a handle-shaped first field can never reach the console or the report. A NULL service or a NULL GUID reports `other`.
 - The prefix shapes and service labels are defined once, in `pick_chat.py`; `send_probe.py` derives its `ALLOWED` from them.
 - Not run yet: Alex's Step 6 preflight in Terminal.app.
+
+## 2026-11-14 16:10 ET — STATUS: PR #28 out of RUNNING NOW; Task 0 state
+- RUNNING NOW cited PR #28 as if it were in flight; it merged 2026-11-12 and its DONE bullet already exists, so the app bullet now points at DONE.
+- Header, PLAN and QUEUED now name the natural-replies Mac plan (PR #36) and Task 0 steps 1–5 (PR #37) instead of the redesign brainstorm.
+- Task 0 step 7 not decided: no preflight results reached this session (Linux dev box), so nothing is recorded as ready.
+
+## 2026-11-14 — Moved from STATUS (size trim)
+- STATUS was over 8k after the Task 0 update; this EVIDENCE line moved verbatim (the uplink was re-proven 2026-11-14, per STATUS RUNNING NOW).
+
+EVIDENCE (moved):
+- HomeChat uplink live (2026-11-09 19:10 ET, `homechat-bot` PR #208 deployed with only the uplink switched on; recorded in that repo). The Mac's device token was issued from the Mac's Terminal and lives only in the login keychain (item present, value never shown). The first Save stored only the address; the cause wasn't pinned down; re-entering the address and pasting the token again worked.
