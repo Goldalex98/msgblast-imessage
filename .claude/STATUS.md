@@ -1,8 +1,8 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-14 17:30 ET
+**Updated:** 2026-11-14 17:40 ET
 **At:** Building is stopped. The Task 0 preflight passed (`any;` chats resolve), but `chat.service_name` proved stale on macOS 27, and three Fable reviews then found the method overbuilt and rigid. Alex ruled that replies go on every route (iMessage, SMS, RCS) and that he uses msgblast only for the companion. Fable recommends leaving the fork for a small standalone agent on the `imsg` library.
-**Next:** Alex decides on the pivot (Fable: a standalone Swift agent with `IMsgCore` as the reader, our send script kept). Then a no-send `imsg` trial in Terminal.app, a new design (both repos) with one Fable review, and new plans. Nothing is built before that.
+**Next:** The no-send `imsg` trial (install `imsg` via Homebrew with Alex's yes, rehearse every command on the synthetic fixture first, then Alex runs it in Terminal.app; counts and shapes only, no send). If it holds: a design for the standalone agent across both repos, one Fable review, then plans.
 **Phase:** Phase 3 Replies: redesign; the natural-replies Mac plan is superseded (not built). Mac switch off; HomeChat still refuses every send (`iMessage;` gate). Phase 1 left open: checks 5–8 and desk items (PR D).
 **Milestones:** Setup ✓ · Spikes ✓ · Read and flag · Calendar · Replies (now) · Duet tools
 **Project Desk:** not linked from this public repo
@@ -17,7 +17,6 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
-- PR #39 (this status update, docs only): fork CI running; merges on green.
 - Fork CI (`fork-ci.yml`): runs on PRs and pushes to `main`.
 - "msgblast iMessage.app" on the MacBook: the phase 3 build, Apple Development signed, installed 2026-11-12 evening (see DONE); "Send approved replies" turned off again 2026-11-14 ~14:00 ET (quit, edit, reopen). Uplink and the flagger proven working 2026-11-14 (a test text was flagged and nudged). Rollback copies: `build/rollback-20261112*/`.
 
@@ -35,10 +34,10 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
 
 ## AWAITING Alex
-- The pivot decision: keep the fork, or a small standalone agent on `imsg` (Fable's pick). Then his yes to install `imsg` for the no-send trial.
-- Earlier note: Terminal keeps Full Disk Access and Automation → Messages for now, by Alex's choice (2026-11-09), in case a Terminal step is needed again.
+- His yes to install `imsg` (Homebrew tap `steipete/tap`) for the trial, then the trial run itself in Terminal.app. Terminal keeps Full Disk Access and Automation → Messages for now, by his choice (2026-11-09).
 
 ## DONE
+- 2026-11-14 17:40 ET: PR #39 merged (`03cc6d5`, docs only). Alex accepted Fable's pivot direction, pending the trial: a standalone agent (no menu-bar icon unless it is the easier route), a new public repo, and imsg updates that arrive and merge automatically on green CI rather than by hand review. `brew upgrade` does not run unattended on the Mac (no Homebrew launch agent found).
 - 2026-11-14 17:30 ET: Task 0 preflight (no send): 1:1 `any;-;` ready, group `any;+;` ready, no −1728/9003. `chat.service_name` is stale (a blue-bubble group reads SMS: 6156 iMessage rows to 1 SMS; 40 direct and 16 group chats likewise). Research pass plus three Fable reviews (send path: rethink; every route: drop the service gate, report the route used; whole system: keep the safety core, rethink the method; pivot: standalone agent on `IMsgCore`). Alex: every route allowed; msgblast used only for the companion. Nothing built or sent. Reviews kept locally, outside the repo.
 - 2026-11-14: Natural-replies Mac plan merged (PR #36, `32a1a2c`); Task 0 steps 1–5, the preflight recording GUID prefix shape and service, merged (PR #37, `1983a89`). No preflight run recorded yet.
 - 2026-11-14: Phase 3 acceptance on the installed build: A not run (Alex skipped); B failed: HomeChat refused the approved edit before queueing ("That thread isn't iMessage", `any;` GUIDs), 0 sends queued, Mac ledger 0; C, D, E not run (Alex chose a redesign first); F skipped earlier. Proven end to end: uplink and the flagger (test text flagged and nudged to Alex's phone). Not proven: any send from the fork app.
