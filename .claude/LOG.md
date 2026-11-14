@@ -62,3 +62,12 @@ EVIDENCE (moved, superseded by the phase 3 build):
 
 DONE (moved, superseded by the phase 3 build):
 - 2026-11-10: reader hardening installed on the MacBook (build `2d037cc`) after the counts-only pre-install checks and the Mac gate passed; status reads Up to date.
+
+## 2026-11-14 — Moved from STATUS (size trim)
+- 2026-11-11: PR #22 merged (`97f28bb`): the approved phase 3 Mac plan; `main` CI green.
+- 2026-11-11: PR #21 merged (`8dfcba2`; Mac gate Python 182/0 failed, native 962/0 failed; PR and `main` CI green): Settings Save says when a token is still needed (empty field, none saved) and reads the token back after writing it, so a write that didn't stick shows an error instead of "Saved". The save logic moved into Core (`CompanionConfig.saveSettings`) with 7 unit tests on a fake token store. Not installed on the Mac; the signed app's Keychain path is unchanged and not re-checked.
+
+## 2026-11-14 11:55 ET — Phase 2 Calendar built on the HomeChat side
+- Phase 2 needs no Mac code: HomeChat reads the calendars in plain code on its existing Google Calendar client (Alex's choice over the design's separate calendar run; dated note on design §10 item 3). A date with no time lists that day's events and `N add` makes an all-day event (Alex: "A").
+- Fable (medium) reviewed the HomeChat amendment and plan at Alex's ask; findings folded in. Built in `homechat-bot` (PR #305, switch off); its bot-safety review found no critical issues, two fixed test-first.
+- Acceptance runbook added here, next to phase 3's. Not verified: any live calendar read or add.

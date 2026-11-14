@@ -274,6 +274,7 @@ A fresh builder read this design and raised 9 questions. These are settled as my
    - **Flagger:** classify, extract dates, draft replies. It has no tools and no connector, and is trust `untrusted`. It runs on HomeChat's form-filler API path, with spend in dollars on that ledger under its own kind and its own cap (§5.4), so it doesn't eat Alex's claude.ai usage.
    - **Calendar check:** a separate `claude -p` run with Calendar *read* only and no message text. Plain code first validates the flagger's extracted date and time (no free text), so the run sees only dates. This satisfies the untrusted-run rule: message text never reaches a tool-holding run.
    - **Calendar add:** stays on HomeChat's existing path after `yes`.
+   - *2026-11-14, superseded for the calendar check:* phase 2 reads the calendars in plain code on HomeChat's existing Google Calendar client, with no `claude -p` run and no spend, and the add is `N add` on that same client. Message text still never reaches a tool-holding run. See `homechat-bot` `docs/superpowers/specs/2026-11-14-imsg-phase2-calendar-amendment.md`.
 4. **Signing:** macOS ties Full Disk Access and Automation grants to the app's code signature. An ad-hoc build can lose them on every rebuild.
    - Phase 0 adds **spike (g)**: build, grant, rebuild, and check the grants survive.
    - **Alex: no paid Apple Developer account, and he would rather not pay $99/yr** (2026-11-07).
