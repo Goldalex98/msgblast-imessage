@@ -1,9 +1,9 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-15 08:40 ET
-**At:** Building the standalone agent, inline, from the approved plan (`docs/superpowers/plans/2026-11-15-imsg-standalone-agent.md`). Task 1's stop gate passed: `IMsgCore` 0.21.0 resolves and builds as a pinned SwiftPM dependency, reads a synthetic fixture, and signs with hardened runtime. Nothing sent.
-**Next:** Task 2: create `Goldalex98/imsg-companion`, its CI, and the contract amendment HomeChat builds against; then Tasks 3–13 there. HomeChat's half (design §7) goes to `homechat-bot`'s own session and PRs.
-**Phase:** Phase 3 Replies: standalone agent designed, plan next; the natural-replies Mac plan is superseded (not built). Mac switch off; HomeChat still refuses every send (`iMessage;` gate). Phase 1 left open: checks 5–8 and desk items (PR D).
+**Updated:** 2026-11-15 10:40 ET
+**At:** The standalone agent is built in `Goldalex98/imsg-companion` (plan Tasks 1–13, PRs #1–#12 there) and installed idle on the MacBook. This fork is frozen, except for cutover notes. Nothing has been sent and nothing real has been read.
+**Next:** Cutover, by `imsg-companion`'s `docs/runbooks/cutover.md`, after HomeChat deploys its half (design §7, in `homechat-bot`'s own session). Then Stage U, and Stage S with Alex's typed yes per send.
+**Phase:** Phase 3 Replies: the agent is built and waits on HomeChat's deploy. Mac switch off; HomeChat still refuses every send. Phase 1 checks 5–8 move to the agent's Stage U (U5).
 **Milestones:** Setup ✓ · Spikes ✓ · Read and flag · Calendar · Replies (now) · Duet tools
 **Project Desk:** not linked from this public repo
 
@@ -13,7 +13,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
 - 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — next (uplink, flagger and update live; checks 5–8 and desk items left)
 - 2 Calendar — free or clash for texted dates, add on yes — next (HomeChat-only; code in homechat-bot#305, switch off; deploy and acceptance wait on Alex)
-- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — now (pivot to a standalone agent on `IMsgCore` in a new repo: design approved, plan next; Mac switch off)
+- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — now (standalone agent built in `imsg-companion`; cutover after HomeChat's deploy; Mac switch off)
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
@@ -23,11 +23,11 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 
 ## QUEUED
 - Phase 2 Calendar acceptance (`docs/superpowers/runbooks/phase2-calendar-acceptance.md`): after Alex's yes to deploy HomeChat with its calendar switch on, a test contact's dated text, `N add` by Alex, the event seen in Calendar on his phone. No Mac build.
-- Standalone agent: implementation plan, one Fable plan review, then build in the new repo `Goldalex98/imsg-companion` (not created yet). The 2026-11-14 natural-replies Mac plan is superseded.
+- Cutover to the agent (`imsg-companion` `docs/runbooks/cutover.md`): this app is quit and its Login Item switched off (Alex), its cursor is copied to the agent, and it stays installed and paused as the fallback. Its token is revoked before Stage S.
 - HomeChat's half of the agent design (§7: new fields, unsend update path, `control.paused`, new device token): `homechat-bot`'s own session and PRs, deployed before cutover.
 - Deletion reconcile, the Mac half: send `present` daily for the last 14 days (queued on the HomeChat side; not planned here yet).
 - `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
-- Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip) on the installed build: not run, waiting for a free test contact. Run them with one question-shaped text so the same run checks a flag on Alex's phone and its clear on his reply.
+- Mac acceptance checks 5–8: now the agent's Stage U U5 (`imsg-companion` `docs/runbooks/stage-u.md`), not run on this fork.
 
 ## BLOCKED
 - None.
@@ -39,6 +39,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - Delete the `ImsgAgentProbe` row in Full Disk Access (left from the 2026-11-14 launchd probe, which was removed). Terminal keeps Full Disk Access and Automation → Messages, by his choice (2026-11-09); Claude Code's process also has Full Disk Access since 2026-11-14 for counts-only checks (his grant; he may switch it off).
 
 ## DONE
+- 2026-11-15 10:40 ET: the standalone agent built in `Goldalex98/imsg-companion` (plan Tasks 1–13), with runbooks for cutover, Stage U and Stage S. Installed idle on the MacBook: no token, sends off, Full Disk Access not yet granted.
 - 2026-11-15 08:40 ET: plan Task 1 (dependency proof) passed on the MacBook (LOG).
 - 2026-11-15 08:33 ET: PR #43 merged (`e59cbb7`, docs only): the agent plan, approved for inline execution.
 - 2026-11-15 08:28 ET: PR #42 merged (`474a827`, docs only; PR and main CI green): the design, approved.
