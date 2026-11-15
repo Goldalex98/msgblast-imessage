@@ -1,9 +1,9 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-14 20:25 ET
-**At:** The no-send `imsg` trial passed on the MacBook (2026-11-14 18:00–20:22 ET): `imsg` 0.21.0 read every chat on macOS 27.2 with the expected shapes, and its live watch reported a new text, its edit, its unsend and Alex's reply. Nothing was sent. Building is still stopped.
-**Next:** With Alex's yes, a design for the standalone agent on `IMsgCore` across both repos (every route, auto-merged `imsg` updates, status through HomeChat), one Fable review, then plans. Nothing is built before that.
-**Phase:** Phase 3 Replies: redesign; the natural-replies Mac plan is superseded (not built). Mac switch off; HomeChat still refuses every send (`iMessage;` gate). Phase 1 left open: checks 5–8 and desk items (PR D).
+**Updated:** 2026-11-15 08:20 ET
+**At:** Alex approved the standalone-agent design (2026-11-15, `docs/superpowers/specs/2026-11-14-imsg-standalone-agent-design.md`; Fable-reviewed, sound with changes, folded in). Nothing built or sent.
+**Next:** The agent's implementation plan (writing-plans), whose Task 1 proves `IMsgCore` 0.21.0 works as a pinned SwiftPM dependency despite `unsafeFlags` in `imsg`'s executable target (stop if not), then one Fable plan review. HomeChat's half (design §7) goes to `homechat-bot`'s own session and PRs.
+**Phase:** Phase 3 Replies: standalone agent designed, plan next; the natural-replies Mac plan is superseded (not built). Mac switch off; HomeChat still refuses every send (`iMessage;` gate). Phase 1 left open: checks 5–8 and desk items (PR D).
 **Milestones:** Setup ✓ · Spikes ✓ · Read and flag · Calendar · Replies (now) · Duet tools
 **Project Desk:** not linked from this public repo
 
@@ -13,7 +13,7 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
 - 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — next (uplink, flagger and update live; checks 5–8 and desk items left)
 - 2 Calendar — free or clash for texted dates, add on yes — next (HomeChat-only; code in homechat-bot#305, switch off; deploy and acceptance wait on Alex)
-- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — now (redesign after Fable reviews; possible pivot off the fork; Mac switch off)
+- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — now (pivot to a standalone agent on `IMsgCore` in a new repo: design approved, plan next; Mac switch off)
 - 4 Duet tools — waiting texts and reply proposals in Duet — next
 
 ## RUNNING NOW
@@ -23,7 +23,8 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 
 ## QUEUED
 - Phase 2 Calendar acceptance (`docs/superpowers/runbooks/phase2-calendar-acceptance.md`): after Alex's yes to deploy HomeChat with its calendar switch on, a test contact's dated text, `N add` by Alex, the event seen in Calendar on his phone. No Mac build.
-- Phase 3 redesign: the no-send `imsg` trial passed (see EVIDENCE); next a design across both repos covering every route, the narrowed code-skip rule, unsaved senders, tolerant result details and wake-tolerant expiry (Fable audit), with one Fable review. The 2026-11-14 natural-replies Mac plan is superseded.
+- Standalone agent: implementation plan, one Fable plan review, then build in the new repo `Goldalex98/imsg-companion` (not created yet). The 2026-11-14 natural-replies Mac plan is superseded.
+- HomeChat's half of the agent design (§7: new fields, unsend update path, `control.paused`, new device token): `homechat-bot`'s own session and PRs, deployed before cutover.
 - Deletion reconcile, the Mac half: send `present` daily for the last 14 days (queued on the HomeChat side; not planned here yet).
 - `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
 - Mac acceptance checks 5–8 (quit-and-reopen catch-up, offline retry, SSN scrub, code skip) on the installed build: not run, waiting for a free test contact. Run them with one question-shaped text so the same run checks a flag on Alex's phone and its clear on his reply.
@@ -35,9 +36,10 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
 
 ## AWAITING Alex
-- His yes to start the standalone-agent design (one Fable review before any plan). Terminal keeps Full Disk Access and Automation → Messages, by his choice (2026-11-09); Claude Code's process also has Full Disk Access since 2026-11-14 for counts-only checks (his grant; he may switch it off).
+- Delete the `ImsgAgentProbe` row in Full Disk Access (left from the 2026-11-14 launchd probe, which was removed). Terminal keeps Full Disk Access and Automation → Messages, by his choice (2026-11-09); Claude Code's process also has Full Disk Access since 2026-11-14 for counts-only checks (his grant; he may switch it off).
 
 ## DONE
+- 2026-11-15 08:13 ET: Alex approved the standalone-agent design, including Claude's "my call" defaults as written.
 - 2026-11-14 20:22 ET: no-send `imsg` trial passed (EVIDENCE). PR #40 merged 17:38 ET (`854f56c`, docs only).
 - 2026-11-14 17:40 ET: PR #39 merged (`03cc6d5`, docs only). Alex accepted Fable's pivot direction, pending the trial: a standalone agent (no menu-bar icon unless it is the easier route), a new public repo, and imsg updates that arrive and merge automatically on green CI rather than by hand review. `brew upgrade` does not run unattended on the Mac (no Homebrew launch agent found).
 
