@@ -1,8 +1,8 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-15 08:45 ET
-**At:** Alex approved the standalone-agent design (2026-11-15, `docs/superpowers/specs/2026-11-14-imsg-standalone-agent-design.md`; Fable-reviewed, sound with changes, folded in). Nothing built or sent.
-**Next:** Alex reviews the agent plan (`docs/superpowers/plans/2026-11-15-imsg-standalone-agent.md`, Fable-reviewed, sound with changes, folded in) and picks how it runs. Its Task 1 proves `IMsgCore` 0.21.0 as a pinned SwiftPM dependency despite `unsafeFlags` and stops if it fails. HomeChat's half (design §7) goes to `homechat-bot`'s own session and PRs.
+**Updated:** 2026-11-15 08:40 ET
+**At:** Building the standalone agent, inline, from the approved plan (`docs/superpowers/plans/2026-11-15-imsg-standalone-agent.md`). Task 1's stop gate passed: `IMsgCore` 0.21.0 resolves and builds as a pinned SwiftPM dependency, reads a synthetic fixture, and signs with hardened runtime. Nothing sent.
+**Next:** Task 2: create `Goldalex98/imsg-companion`, its CI, and the contract amendment HomeChat builds against; then Tasks 3–13 there. HomeChat's half (design §7) goes to `homechat-bot`'s own session and PRs.
 **Phase:** Phase 3 Replies: standalone agent designed, plan next; the natural-replies Mac plan is superseded (not built). Mac switch off; HomeChat still refuses every send (`iMessage;` gate). Phase 1 left open: checks 5–8 and desk items (PR D).
 **Milestones:** Setup ✓ · Spikes ✓ · Read and flag · Calendar · Replies (now) · Duet tools
 **Project Desk:** not linked from this public repo
@@ -39,6 +39,8 @@ _The instrument panel: rewrite it in place, only ever describing now, on every s
 - Delete the `ImsgAgentProbe` row in Full Disk Access (left from the 2026-11-14 launchd probe, which was removed). Terminal keeps Full Disk Access and Automation → Messages, by his choice (2026-11-09); Claude Code's process also has Full Disk Access since 2026-11-14 for counts-only checks (his grant; he may switch it off).
 
 ## DONE
+- 2026-11-15 08:40 ET: plan Task 1 (dependency proof) passed on the MacBook (LOG).
+- 2026-11-15 08:33 ET: PR #43 merged (`e59cbb7`, docs only): the agent plan, approved for inline execution.
 - 2026-11-15 08:28 ET: PR #42 merged (`474a827`, docs only; PR and main CI green): the design, approved.
 - 2026-11-15 08:13 ET: Alex approved the standalone-agent design, including Claude's "my call" defaults as written.
 - 2026-11-14 20:22 ET: no-send `imsg` trial passed (EVIDENCE). PR #40 merged 17:38 ET (`854f56c`, docs only).
