@@ -154,3 +154,9 @@ EVIDENCE (moved):
 - `MessageStore.messagesAfterPage` read a synthetic fixture (a copy of the fork's): three joined rows in order, an orphan with `chatID` 0, `nextRowID` 4. The only column the fork fixture lacked was `message.service`.
 - A probe `.app` signed with the Apple Development identity, hardened runtime and the Apple Events entitlement: `codesign --verify --strict` valid; the designated requirement is the identifier plus the certificate, with no code hash; it ran with no library-validation error.
 - Not shown: the Xcode 27 GitHub runner (Task 2's first CI run), real `chat.db` reads through the library. The probe folder stays until Alex says to delete it.
+
+## 2026-11-15 10:40 ET — the standalone agent is built; this fork freezes
+- Plan Tasks 2–13 ran in `Goldalex98/imsg-companion` (PRs #1–#12, each merged on green CI). That repo's LOG holds the detail.
+- This fork now changes only for cutover notes. The app stays installed and paused, as the rollback.
+- Next is cutover, after HomeChat deploys its §7 changes. The runbooks are in the agent repo's `docs/runbooks/`.
+- Nothing has been sent. Nothing real has been read through the agent.
