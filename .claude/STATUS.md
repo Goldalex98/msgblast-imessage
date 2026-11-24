@@ -1,9 +1,10 @@
 # Status: msgblast-imessage
 
-**Updated:** 2026-11-15 10:40 ET
-**At:** The standalone agent is built in `Goldalex98/imsg-companion` (plan Tasks 1–13, PRs #1–#12 there) and installed idle on the MacBook. This fork is frozen, except for cutover notes. Nothing has been sent and nothing real has been read.
-**Next:** Cutover, by `imsg-companion`'s `docs/runbooks/cutover.md`, after HomeChat deploys its half (design §7, in `homechat-bot`'s own session). Then Stage U, and Stage S with Alex's typed yes per send.
-**Phase:** Phase 3 Replies: the agent is built and waits on HomeChat's deploy. Mac switch off; HomeChat still refuses every send. Phase 1 checks 5–8 move to the agent's Stage U (U5).
+**Updated:** 2026-11-24 16:05 ET
+**Lifecycle:** frozen
+**At:** The standalone agent in `Goldalex98/imsg-companion` cut over and has been live in daily use since 2026-11-23. This fork is frozen and retained only as a historical/fallback reference.
+**Next:** None here — active iMessage companion work lives in `Goldalex98/imsg-companion`.
+**Phase:** Frozen fork (superseded by `imsg-companion`).
 **Milestones:** Setup ✓ · Spikes ✓ · Read and flag · Calendar · Replies (now) · Duet tools
 **Project Desk:** not linked from this public repo
 
