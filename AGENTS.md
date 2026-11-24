@@ -15,7 +15,7 @@
 - Before declaring completion run the gate for the host, exactly as written in `.claude/agents/quality-gate.md` (they match the allow rules): on Linux the Python script tests; on the Mac also the native core tests from `docs/testing.md`.
 - Agents: `quality-gate` (runs the host's gate, never fixes) and `send-safety-reviewer` (read-only review of changes to reading, scrubbing, uplink, sending, permissions and build settings). Use the same gate commands and review criteria with every provider. The lead owns verification and publication. Workers follow the authority in their brief.
 - This project uses the user-level `flight-deck` skill instead of a handoff file: `.claude/STATUS.md` is rewritten in place on every state change, `.claude/LOG.md` is append-only. Both are public, so keep personal data out of them.
-- GUI repo: every UI change follows the `design-gate` skill (both design skills + a before/after Design Review artifact). UI paths: `.claude/design-gate.json`. Screenshots: native macOS: screenshots on the MacBook (`--demo --isolated-demo`, docs/testing.md) or `scripts/build_web_preview.sh --fixture`.
+- GUI repo: every UI change follows the `design-gate` skill (all three design skills + independent critique + a before/after Design Review artifact). UI paths: `.claude/design-gate.json`. Screenshots: native macOS: screenshots on the MacBook (`--demo --isolated-demo`, docs/testing.md) or `scripts/build_web_preview.sh --fixture`.
 
 ---
 
