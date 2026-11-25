@@ -5,33 +5,18 @@
 **At:** The standalone agent in `Goldalex98/imsg-companion` cut over and has been live in daily use since 2026-11-23. This fork is frozen and retained only as a historical/fallback reference.
 **Next:** None here — active iMessage companion work lives in `Goldalex98/imsg-companion`.
 **Phase:** Frozen fork (superseded by `imsg-companion`).
-**Milestones:** Setup ✓ · Spikes ✓ · Read and flag · Calendar · Replies (now) · Duet tools
+**Milestones:** Historical fork ✓ · Standalone cutover ✓
 **Project Desk:** not linked from this public repo
 
 _The instrument panel: rewrite it in place, only ever describing now, on every state change. Why things are the way they are goes in [LOG.md](LOG.md) (append only). Format and rules: the user-level `flight-deck` skill. This repo is public: no names, numbers, hosts or tokens here._
 
 ## PLAN
-- 0 Spikes — answer the seven unknowns on the MacBook (design §7) — done (spike (e) full test waits on `homechat-bot`)
-- 1 Read and flag — flags on the desk and in the WhatsApp update, cleared by a reply — next (uplink, flagger and update live; checks 5–8 and desk items left)
-- 2 Calendar — free or clash for texted dates, add on yes — next (HomeChat-only; code in homechat-bot#305, switch off; deploy and acceptance wait on Alex)
-- 3 Replies — approved sends with expiry, audit and no retry of ambiguous sends — now (standalone agent built in `imsg-companion`; cutover after HomeChat's deploy; Mac switch off)
-- 4 Duet tools — waiting texts and reply proposals in Duet — next
+
+- Historical fork milestones and trials are recorded in `LOG.md` and the plans below. Current iMessage companion work and acceptance live in `Goldalex98/imsg-companion`.
 
 ## RUNNING NOW
-- Fork CI (`fork-ci.yml`): runs on PRs and pushes to `main`.
-- `imsg` 0.21.0 on the MacBook (Homebrew `steipete/tap/imsg`, only that formula trusted, `brew pin`ned; Developer ID signed and notarized). Installed for the trial; nothing runs it.
-- "msgblast iMessage.app" on the MacBook: the phase 3 build, Apple Development signed, installed 2026-11-12 evening (see DONE); "Send approved replies" turned off again 2026-11-14 ~14:00 ET (quit, edit, reopen). Uplink and the flagger proven working 2026-11-14 (a test text was flagged and nudged). Rollback copies: `build/rollback-20261112*/`.
 
-## QUEUED
-- Phase 2 Calendar acceptance (`docs/superpowers/runbooks/phase2-calendar-acceptance.md`): after Alex's yes to deploy HomeChat with its calendar switch on, a test contact's dated text, `N add` by Alex, the event seen in Calendar on his phone. No Mac build.
-- Cutover to the agent (`imsg-companion` `docs/runbooks/cutover.md`): this app is quit and its Login Item switched off (Alex), its cursor is copied to the agent, and it stays installed and paused as the fallback. Its token is revoked before Stage S.
-- HomeChat's half of the agent design (§7: new fields, unsend update path, `control.paused`, new device token): `homechat-bot`'s own session and PRs, deployed before cutover.
-- Deletion reconcile, the Mac half: send `present` daily for the last 14 days (queued on the HomeChat side; not planned here yet).
-- `homechat-bot` PR D (`txt-` desk items, not started; PR C merged as homechat-bot#231), per its plan `docs/superpowers/plans/2026-11-08-imsg-phase1-plan.md`, under that repo's rules (spec §9).
-- Mac acceptance checks 5–8: now the agent's Stage U U5 (`imsg-companion` `docs/runbooks/stage-u.md`), not run on this fork.
-
-## BLOCKED
-- None.
+- Fork CI remains available for maintenance PRs. The standalone agent owns the live companion.
 
 ## HELD
 - An upstream PR offering a generic local API to msgblast (design phase 5): only with Alex's yes.
