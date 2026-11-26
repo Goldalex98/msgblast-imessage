@@ -56,3 +56,5 @@ as they change:
 | `scripts/generate_project.py` | 2026-11-08 | Compiles the companion's `ContactNameResolver.swift` into the tests target, beside upstream's `MessagesAccessGuide.swift` case |
 | `msgblast/App/msgblastApp.swift` | 2026-11-08 | `AppStartup` creates and starts one `CompanionController` (not in demo mode) and passes it to Settings |
 | `msgblast/Windows/Views.swift` | 2026-11-08 | `AppSettingsView` takes an optional `companion` and shows its section first |
+| `download/package.json`, `download/package-lock.json` | 2026-11-26 | Wrangler 4.147.0 → 4.160.1 for high advisories in wrangler, miniflare, undici and sharp |
+| `prototypes/remotion-onboarding/package.json`, `package-lock.json` | 2026-11-26 | Remotion 4.0.534 → 4.0.547 for high advisories (incl. zod) |
