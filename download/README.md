@@ -16,7 +16,7 @@ npm test --prefix download
 npm run check --prefix download
 ```
 
-Run these from the repository root with Node.js 22/npm. `check` is a Wrangler
+Run these from the repository root with Node.js 22.12 or later/npm (Wrangler 4.160 requires it). `check` is a Wrangler
 deployment **dry run**, not publication. The tests use controlled feed/request
 fixtures. They do not prove production routing, signed feed availability, or
 completed downloads. See [Testing](../docs/testing.md#python-and-backend-checks).
